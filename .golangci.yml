@@ -1,0 +1,54 @@
+run:
+  tests: false
+output:
+  sort-results: true
+linters:
+  enable-all: true
+  disable:
+    - gci
+    - wsl
+    - gofumpt
+    - nonamedreturns
+    - cyclop
+    - gocritic
+    - nakedret
+    - gomnd
+    - ireturn
+    - goerr113
+    - errchkjson
+    - tagalign
+    - depguard
+    - funlen
+    - varnamelen
+    - exhaustruct
+    - nlreturn
+    - wrapcheck
+    - exhaustive
+    # deprecated linters
+    - structcheck
+    - ifshort
+    - scopelint
+    - exportloopref
+    - nosnakecase
+    - exhaustivestruct
+    - golint
+    - deadcode
+    - interfacer
+    - varcheck
+    - maligned
+issues:
+  exclude-rules:
+    - path: execx/
+      linters:
+        - gosec
+    - path: logx/
+      text: fmt.Println
+      linters:
+        - forbidigo
+    - path: logx/
+      linters:
+        - gochecknoglobals
+    - path: cmd/
+      linters:
+        - gochecknoinits
+        - gochecknoglobals
