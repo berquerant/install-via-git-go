@@ -94,6 +94,9 @@ func run(cmd *cobra.Command, _ []string) error {
 	if err := workDir.DirPath().Ensure(); err != nil {
 		return errorx.Errorf(err, "ensure workDir")
 	}
+	if err := gitWorkDir.Parent().DirPath().Ensure(); err != nil {
+		return errorx.Errorf(err, "ensure git workDir")
+	}
 
 	logx.Info("setup")
 	if _, err := stringsToExecutor(config.Steps.Setup).
