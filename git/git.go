@@ -5,7 +5,6 @@ import (
 	"berquerant/install-via-git-go/filepathx"
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 )
 
@@ -101,7 +100,7 @@ func (c CommandImpl) Checkout(ctx context.Context, commit string) error {
 }
 
 func (c CommandImpl) ResetHard(ctx context.Context, commit string) error {
-	_, err := c.cli.Execute(ctx, "reset", "--hard", fmt.Sprintf("origin/%s", commit))
+	_, err := c.cli.Execute(ctx, "reset", "--hard", commit)
 	return err
 }
 
