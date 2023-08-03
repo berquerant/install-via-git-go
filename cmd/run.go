@@ -37,9 +37,7 @@ var runCmd = &cobra.Command{
 
 func run(cmd *cobra.Command, _ []string) error {
 	// load config
-	cfgFile, _ := cmd.Flags().GetString("config")
-	logx.Info("config", logx.S("path", cfgFile))
-	config, err := parseConfigFile(cfgFile)
+	config, err := parseConfigFromFlag(cmd)
 	if err != nil {
 		return err
 	}

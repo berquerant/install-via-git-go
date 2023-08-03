@@ -45,6 +45,21 @@ func TestEndToEnd(t *testing.T) {
 		})
 	})
 
+	t.Run("parse from stdin", func(t *testing.T) {
+		skeletonCmd := exec.Command(ivg, "skeleton")
+		parseCmd := exec.Command(ivg, "parse", "--config", "-")
+		skeletonStdout, err := skeletonCmd.StdoutPipe()
+		fail(t, err)
+		parseCmd.Stdin = skeletonStdout
+		parseCmd.Stdout = os.Stdout
+		parseCmd.Stderr = os.Stderr
+
+		fail(t, skeletonCmd.Start())
+		fail(t, parseCmd.Start())
+		fail(t, skeletonCmd.Wait())
+		fail(t, parseCmd.Wait())
+	})
+
 	t.Run("install self", func(t *testing.T) {
 		configPath := filepath.Join(based, "self.yml")
 
