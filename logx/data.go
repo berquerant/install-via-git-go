@@ -4,6 +4,7 @@ type Logger interface {
 	Error(msg string, data ...Data)
 	Info(msg string, data ...Data)
 	Debug(msg string, data ...Data)
+	Raw(msg string)
 	Sync() error
 }
 

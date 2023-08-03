@@ -32,6 +32,11 @@ func (l *BlockLogger) Debug(msg string, data ...Data) {
 	}
 }
 
+// Raw writes msg as is.
+func (l *BlockLogger) Raw(msg string) {
+	l.w(msg)
+}
+
 func (*BlockLogger) Sync() error {
 	return nil
 }

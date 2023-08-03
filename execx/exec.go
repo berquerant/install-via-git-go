@@ -96,7 +96,7 @@ func (c *Command) Execute(ctx context.Context, opt ...ConfigOption) (result Resu
 		for stdoutScanner.Scan() {
 			line := stdoutScanner.Text()
 			stdoutBuf.WriteString(line + "\n")
-			logx.Info("exec stdout", logx.S("out", line))
+			logx.Raw(line)
 		}
 		return stdoutScanner.Err()
 	})
@@ -105,7 +105,7 @@ func (c *Command) Execute(ctx context.Context, opt ...ConfigOption) (result Resu
 		for stderrScanner.Scan() {
 			line := stderrScanner.Text()
 			stderrBuf.WriteString(line + "\n")
-			logx.Info("exec stderr", logx.S("out", line))
+			logx.Raw(line)
 		}
 		return stderrScanner.Err()
 	})

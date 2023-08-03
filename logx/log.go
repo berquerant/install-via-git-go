@@ -55,6 +55,10 @@ func Debug(msg string, fields ...Data) {
 	get().Debug(msg, fields...)
 }
 
+func Raw(msg string) {
+	get().Raw(msg)
+}
+
 func Sync() error {
 	return get().Sync()
 }

@@ -40,6 +40,11 @@ func (l *ZapLogger) Debug(msg string, data ...Data) {
 	l.l.Debug(msg, intoZapFields(data)...)
 }
 
+// Raw is an alias of Info.
+func (l *ZapLogger) Raw(msg string) {
+	l.l.Info(msg)
+}
+
 func (l *ZapLogger) Sync() error {
 	return l.l.Sync()
 }
