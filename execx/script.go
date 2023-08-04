@@ -18,6 +18,9 @@ type RawScript struct {
 }
 
 func (s *RawScript) Execute(ctx context.Context, opt ...ConfigOption) (result Result, retErr error) {
+	config := NewConfigBuilder().Dir(filepathx.PWD()).Env(NewEnv()).Build()
+	config.Apply(opt...)
+
 	f, err := os.CreateTemp("", "install_via_git_execx")
 	if err != nil {
 		retErr = err
@@ -27,7 +30,12 @@ func (s *RawScript) Execute(ctx context.Context, opt ...ConfigOption) (result Re
 		_ = os.Remove(f.Name())
 	}()
 
-	if _, err := io.WriteString(f, s.content); err != nil {
+	var (
+		env      = config.Env.Get().Add(EnvFromEnviron())
+		expanded = env.Expand(s.content)
+	)
+
+	if _, err := io.WriteString(f, expanded); err != nil {
 		retErr = err
 		return
 	}

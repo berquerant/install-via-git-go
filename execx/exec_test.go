@@ -69,6 +69,12 @@ echo err >&2`,
 				script: `echo i${nternationalizatio}n >&2`,
 				stderr: "i18n\n",
 			},
+			{
+				title:  "refer env from env",
+				env:    execx.EnvFromSlice([]string{"A=100", "B=$A/200"}),
+				script: `echo $B`,
+				stdout: "100/200\n",
+			},
 		} {
 			tc := tc
 			t.Run(tc.title, func(t *testing.T) {

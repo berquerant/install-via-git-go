@@ -8,6 +8,10 @@ import (
 
 type Env map[string]string
 
+func EnvFromEnviron() Env {
+	return EnvFromSlice(os.Environ())
+}
+
 func NewEnv() Env {
 	return Env(make(map[string]string))
 }
@@ -38,6 +42,17 @@ func (e Env) Get(key string) (string, bool) {
 
 func (e Env) Set(key, value string) {
 	e[key] = value
+}
+
+func (e Env) Add(other Env) Env {
+	result := Env(make(map[string]string))
+	for k, v := range e {
+		result[k] = v
+	}
+	for k, v := range other {
+		result[k] = v
+	}
+	return result
 }
 
 // IntoSlice converts into os.Environ format.

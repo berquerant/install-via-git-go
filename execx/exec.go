@@ -6,7 +6,6 @@ import (
 	"berquerant/install-via-git-go/logx"
 	"bufio"
 	"context"
-	"os"
 	"os/exec"
 	"strings"
 
@@ -54,8 +53,9 @@ func (c *Command) Execute(ctx context.Context, opt ...ConfigOption) (result Resu
 	defer cancel()
 
 	var (
-		env          = append(os.Environ(), config.Env.Get().IntoSlice()...)
-		expandedArgs = EnvFromSlice(env).ExpandStrings(c.args)
+		env          = config.Env.Get().Add(EnvFromEnviron())
+		expandedArgs = env.ExpandStrings(c.args)
+		envSlice     = env.IntoSlice()
 	)
 
 	logx.Info("exec start",
@@ -63,13 +63,16 @@ func (c *Command) Execute(ctx context.Context, opt ...ConfigOption) (result Resu
 		logx.SS("args", c.args),
 		logx.SS("expanded", expandedArgs),
 	)
+	logx.Debug("exec start",
+		logx.SS("env", envSlice),
+	)
 	defer func() {
 		logx.Info("exec end", logx.Err(retErr))
 	}()
 
 	cmd := exec.CommandContext(ctx, expandedArgs[0], expandedArgs[1:]...)
 	cmd.Dir = config.Dir.Get().String()
-	cmd.Env = env
+	cmd.Env = envSlice
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		retErr = errorx.Errorf(err, "stdout pipe")
