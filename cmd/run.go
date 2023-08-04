@@ -25,6 +25,7 @@ func init() {
 	runCmd.Flags().BoolP("update", "u", false, "Force update")
 	runCmd.Flags().BoolP("retry", "r", false, "Continue even if no update")
 	runCmd.Flags().Bool("dry", false, "Execute up to strategy determination, no side effects")
+	runCmd.Flags().String("commit", "", "Fix commit hash")
 	rootCmd.AddCommand(runCmd)
 }
 
@@ -56,9 +57,22 @@ func run(cmd *cobra.Command, _ []string) error {
 	logx.Info("git", logx.S("git", gitCommandName), logx.S("workDir", gitWorkDir.String()))
 
 	// determine strategy
+	explicitCommit, _ := cmd.Flags().GetString("commit")
 	lockFile := workDir.Join(config.LockFile).FilePath()
+	originCommit, _ := lockFile.Read()
+	if explicitCommit != "" {
+		// override current commit
+		if err := lockFile.Write(explicitCommit); err != nil {
+			return errorx.Errorf(err, "override commit")
+		}
+	}
+	rollbackToOriginCommit := func() error {
+		return lockFile.Write(originCommit)
+	}
+
 	update, _ := cmd.Flags().GetBool("update")
 	retry, _ := cmd.Flags().GetBool("retry")
+
 	fact := strategy.NewFact(
 		inspect.RepoExistence(cmd.Context(), gitCommand),
 		inspect.LockExistence(lockFile),
@@ -87,7 +101,7 @@ func run(cmd *cobra.Command, _ []string) error {
 	)
 
 	if dry, _ := cmd.Flags().GetBool("dry"); dry {
-		return nil
+		return rollbackToOriginCommit()
 	}
 
 	logx.Info("start installation!")
