@@ -3,17 +3,31 @@ package backup
 import (
 	"berquerant/install-via-git-go/errorx"
 	"berquerant/install-via-git-go/filepathx"
+	"os"
 )
+
+//go:generate go run github.com/berquerant/goconfig@v0.3.0 -field "Rename bool" -option -output backup_config_generated.go
 
 type Maker interface {
 	// Copy copies origin to backup.
 	Copy() error
 	// Restore moves backup to origin.
-	Restore() error
+	Restore(opt ...ConfigOption) error
 	// Close removes backup.
 	Close() error
 	// Move moves origin to backup.
 	Move() error
+	// Rename renames origin to backup.
+	Rename() error
+}
+
+func IntoTempDir(origin filepathx.Path) (*Backup, error) {
+	dir, err := os.MkdirTemp("", "install_via_git_backup")
+	if err != nil {
+		return nil, errorx.Errorf(err, "new backup")
+	}
+	dirPath, _ := filepathx.NewPath(dir)
+	return New(dirPath.DirPath(), origin)
 }
 
 func New(dir filepathx.DirPath, origin filepathx.Path) (*Backup, error) {
@@ -33,8 +47,17 @@ type Backup struct {
 	path   filepathx.Path
 }
 
-func (b *Backup) Restore() error {
+func (b *Backup) Restore(opt ...ConfigOption) error {
+	config := NewConfigBuilder().Rename(false).Build()
+	config.Apply(opt...)
+	if config.Rename.Get() {
+		return b.path.Rename(b.origin)
+	}
 	return b.move(b.origin, b.path)
+}
+
+func (b *Backup) Rename() error {
+	return b.origin.Rename(b.path)
 }
 
 func (b *Backup) Move() error {

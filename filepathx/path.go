@@ -1,6 +1,7 @@
 package filepathx
 
 import (
+	"berquerant/install-via-git-go/logx"
 	"errors"
 	"os"
 	"path/filepath"
@@ -72,4 +73,14 @@ func (p Path) IsDir() (bool, error) {
 		return false, err
 	}
 	return info.IsDir(), nil
+}
+
+func (p Path) Rename(dst Path) error {
+	err := os.Rename(p.String(), dst.String())
+	logx.Debug("rename",
+		logx.S("src", p.String()),
+		logx.S("dst", dst.String()),
+		logx.Err(err),
+	)
+	return err
 }
