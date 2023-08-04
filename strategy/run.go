@@ -114,6 +114,12 @@ type CreateLockRunner struct {
 }
 
 func (r *CreateLockRunner) Run(ctx context.Context) error {
+	if err := r.c.Command().PullForce(ctx, r.c.Branch()); err != nil {
+		return err
+	}
+	if err := r.c.Command().Checkout(ctx, r.c.Branch()); err != nil {
+		return err
+	}
 	current, err := r.c.Command().GetCommitHash(ctx)
 	if err != nil {
 		return err
@@ -137,9 +143,6 @@ func (r *InitFromEmptyToLatestRunner) Run(ctx context.Context) error {
 		return err
 	}
 	if err := r.c.Command().PullForce(ctx, r.c.Branch()); err != nil {
-		return err
-	}
-	if err := r.c.Command().Checkout(ctx, r.c.Branch()); err != nil {
 		return err
 	}
 
@@ -190,9 +193,6 @@ func (r *InitFromEmptyRunner) Run(ctx context.Context) error {
 		return err
 	}
 	if err := r.c.Command().PullForce(ctx, r.c.Branch()); err != nil {
-		return err
-	}
-	if err := r.c.Command().Checkout(ctx, r.c.Branch()); err != nil {
 		return err
 	}
 	next, err := r.c.Command().GetCommitHash(ctx)
