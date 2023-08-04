@@ -26,96 +26,56 @@ func (d DirPath) Exist() bool {
 	return err == nil && stat.IsDir()
 }
 
-func (d DirPath) Copy(dst DirPath) (retErr error) {
-	defer func() {
-		logx.Debug("copy dir",
-			logx.S("src", d.String()),
-			logx.S("dst", dst.String()),
-			logx.Err(retErr),
-		)
-	}()
+type WalkCallback func(dst, src Path) error
 
+func (d DirPath) WalkWith(dst DirPath, callback WalkCallback) error {
 	in, err := os.Open(d.String())
 	if err != nil {
-		retErr = err
-		return
+		return err
 	}
 	defer in.Close()
 
 	files, err := in.Readdir(-1)
 	if err != nil {
-		retErr = err
-		return
+		return err
 	}
 
 	if err := os.MkdirAll(dst.String(), 0755); err != nil {
-		retErr = err
-		return
+		return err
 	}
 
 	for _, file := range files {
 		srcPath := d.Join(file.Name())
 		dstPath := dst.Join(file.Name())
-
-		if file.IsDir() {
-			if err := srcPath.DirPath().Copy(dstPath.DirPath()); err != nil {
-				retErr = err
-				return
-			}
-			continue
-		}
-
-		if err := srcPath.FilePath().Copy(dstPath.FilePath()); err != nil {
-			retErr = err
-			return
+		if err := callback(dstPath, srcPath); err != nil {
+			return err
 		}
 	}
-	return
+	return nil
 }
 
-func (d DirPath) Move(dst DirPath) (retErr error) {
-	defer func() {
-		logx.Debug("move dir",
-			logx.S("src", d.String()),
-			logx.S("dst", dst.String()),
-			logx.Err(retErr),
-		)
-	}()
-
-	in, err := os.Open(d.String())
-	if err != nil {
-		retErr = err
-		return
-	}
-	defer in.Close()
-
-	files, err := in.Readdir(-1)
-	if err != nil {
-		retErr = err
-		return
-	}
-
-	if err := os.MkdirAll(dst.String(), 0755); err != nil {
-		retErr = err
-		return
-	}
-
-	for _, file := range files {
-		srcPath := d.Join(file.Name())
-		dstPath := dst.Join(file.Name())
-
-		if file.IsDir() {
-			if err := srcPath.DirPath().Move(dstPath.DirPath()); err != nil {
-				retErr = err
-				return
-			}
-			continue
+func (d DirPath) Copy(dst DirPath) (retErr error) {
+	return d.WalkWith(dst, func(dst, src Path) error {
+		isDir, err := src.IsDir()
+		if err != nil {
+			return err
 		}
-
-		if err := srcPath.FilePath().Move(dstPath.FilePath()); err != nil {
-			retErr = err
-			return
+		if isDir {
+			return src.DirPath().Copy(dst.DirPath())
 		}
-	}
-	return
+		return src.FilePath().Copy(dst.FilePath())
+	})
+}
+
+func (d DirPath) Move(dst DirPath) error {
+	return d.WalkWith(dst, func(dst, src Path) error {
+		isDir, err := src.IsDir()
+		if err != nil {
+			return err
+		}
+		if isDir {
+			return src.DirPath().Move(dst.DirPath())
+		}
+		return src.FilePath().Move(dst.FilePath())
+	})
 }

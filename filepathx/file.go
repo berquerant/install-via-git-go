@@ -98,10 +98,10 @@ func (f FilePath) Copy(dst FilePath) (retErr error) {
 	return
 }
 
-func (p FilePath) Move(dst FilePath) error {
-	err := os.Rename(p.String(), dst.String())
+func (f FilePath) Move(dst FilePath) error {
+	err := os.Rename(f.String(), dst.String())
 	logx.Debug("move file",
-		logx.S("src", p.String()),
+		logx.S("src", f.String()),
 		logx.S("dst", dst.String()),
 		logx.Err(err),
 	)
