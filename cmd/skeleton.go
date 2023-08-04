@@ -59,11 +59,13 @@ locald: localrepo
 # empty file is assumed to not exist
 lock: lockfil
 # environment variables (optional).
-# setup, install, rollback, skip can refer the variables and following:
+# setup, install, rollback, skip can refer the following variables:
 # - IVG_URI=value of repository
 # - IVG_BRANCH=value of branch
 # - IVG_LOCALD=value of locald
 # - IVG_LOCK=value of lock
+# install can refer the following variables:
+# - IVG_WORKD=absolute path of workDir
 env:
   MY_NAME: myname
 # setup is always run first in workDir (optional)

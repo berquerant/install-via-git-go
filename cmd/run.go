@@ -49,6 +49,8 @@ func run(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return errorx.Errorf(err, "invalid workDir")
 	}
+	env.Set("IVG_WORKD", workDir.String())
+
 	gitWorkDir := workDir.Join(config.LocalDir).DirPath()
 	gitCommand := git.NewCommand(git.NewCLI(gitWorkDir, env, gitCommandName))
 	logx.Info("git", logx.S("git", gitCommandName), logx.S("workDir", gitWorkDir.String()))
