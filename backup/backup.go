@@ -6,9 +6,14 @@ import (
 )
 
 type Maker interface {
+	// Copy copies origin to backup.
 	Copy() error
+	// Restore moves backup to origin.
 	Restore() error
+	// Close removes backup.
 	Close() error
+	// Move moves origin to backup.
+	Move() error
 }
 
 func New(dir filepathx.DirPath, origin filepathx.Path) (*Backup, error) {
@@ -29,11 +34,27 @@ type Backup struct {
 }
 
 func (b *Backup) Restore() error {
-	return b.copy(b.origin, b.path)
+	return b.move(b.origin, b.path)
+}
+
+func (b *Backup) Move() error {
+	return b.move(b.path, b.origin)
 }
 
 func (b *Backup) Copy() error {
 	return b.copy(b.path, b.origin)
+}
+
+func (*Backup) move(dst filepathx.Path, src filepathx.Path) error {
+	isDir, err := src.IsDir()
+	if err != nil {
+		return errorx.Errorf(err, "backup origin")
+	}
+
+	if isDir {
+		return src.DirPath().Move(dst.DirPath())
+	}
+	return src.FilePath().Move(dst.FilePath())
 }
 
 func (*Backup) copy(dst filepathx.Path, src filepathx.Path) error {

@@ -57,80 +57,109 @@ func TestBackup(t *testing.T) {
 			return b
 		}
 
-		t.Run("remove all", func(t *testing.T) {
-			b := prepareBackup(t)
-			defer b.Close()
-			assert.Nil(t, b.Copy())
-			assert.Nil(t, srcDir.Remove())
-			assert.Nil(t, b.Restore())
-			check(t)
-		})
-
-		t.Run("remove file", func(t *testing.T) {
-			b := prepareBackup(t)
-			defer b.Close()
-			assert.Nil(t, b.Copy())
-			assert.Nil(t, file1.Remove())
-			assert.Nil(t, b.Restore())
-			check(t)
-		})
-
-		t.Run("remove dir", func(t *testing.T) {
-			b := prepareBackup(t)
-			defer b.Close()
-			assert.Nil(t, b.Copy())
-			assert.Nil(t, dir1.Remove())
-			assert.Nil(t, b.Restore())
-			check(t)
-		})
-
-		t.Run("modify file1", func(t *testing.T) {
-			b := prepareBackup(t)
-			defer b.Close()
-			assert.Nil(t, b.Copy())
-			assert.Nil(t, file1.Write("modify"))
-			assert.Nil(t, b.Restore())
-			check(t)
-		})
-
-		t.Run("modify file2", func(t *testing.T) {
-			b := prepareBackup(t)
-			defer b.Close()
-			assert.Nil(t, b.Copy())
-			assert.Nil(t, file2.Write("modify"))
-			assert.Nil(t, b.Restore())
-			check(t)
-		})
+		for _, tc := range []struct {
+			title  string
+			change func(t *testing.T)
+		}{
+			{
+				title: "remove all",
+				change: func(t *testing.T) {
+					assert.Nil(t, srcDir.Remove())
+				},
+			},
+			{
+				title: "remove file",
+				change: func(t *testing.T) {
+					_ = file1.Remove()
+				},
+			},
+			{
+				title: "remove dir",
+				change: func(t *testing.T) {
+					assert.Nil(t, dir1.Remove())
+				},
+			},
+			{
+				title: "modify file1",
+				change: func(t *testing.T) {
+					assert.Nil(t, file1.Write("change"))
+				},
+			},
+			{
+				title: "modify file2",
+				change: func(t *testing.T) {
+					assert.Nil(t, file2.Write("change"))
+				},
+			},
+		} {
+			tc := tc
+			t.Run(tc.title, func(t *testing.T) {
+				t.Run("copy", func(t *testing.T) {
+					b := prepareBackup(t)
+					defer b.Close()
+					assert.Nil(t, b.Copy())
+					tc.change(t)
+					assert.Nil(t, b.Restore())
+					check(t)
+				})
+				t.Run("move", func(t *testing.T) {
+					b := prepareBackup(t)
+					defer b.Close()
+					assert.Nil(t, b.Move())
+					tc.change(t)
+					assert.Nil(t, b.Restore())
+					check(t)
+				})
+			})
+		}
 	})
 
 	t.Run("file", func(t *testing.T) {
 		const content = "zone"
 		origin := basePath.Join("src.file")
-
-		assert.Nil(t, origin.FilePath().Write(content))
-		b, err := backup.New(basePath.Join("filebackup").DirPath(), origin)
-		if !assert.Nil(t, err) {
-			return
+		prepare := func(t *testing.T) {
+			assert.Nil(t, origin.FilePath().Write(content))
 		}
-		defer b.Close()
-
-		t.Run("modify", func(t *testing.T) {
-			assert.Nil(t, b.Copy())
-			assert.Nil(t, origin.FilePath().Write("enoz"))
-			assert.Nil(t, b.Restore())
+		prepareBackup := func(t *testing.T) *backup.Backup {
+			prepare(t)
+			b, err := backup.New(basePath.Join("filebackup").DirPath(), origin)
+			assert.Nil(t, err)
+			return b
+		}
+		check := func(t *testing.T) {
 			got, err := origin.FilePath().Read()
 			assert.Nil(t, err)
 			assert.Equal(t, content, got)
+		}
+
+		t.Run("move", func(t *testing.T) {
+			t.Run("modify", func(t *testing.T) {
+				b := prepareBackup(t)
+				defer b.Close()
+				assert.Nil(t, b.Move())
+				assert.Nil(t, origin.FilePath().Write("enoz"))
+				assert.Nil(t, b.Restore())
+				check(t)
+			})
 		})
 
-		t.Run("remove", func(t *testing.T) {
-			assert.Nil(t, b.Copy())
-			assert.Nil(t, origin.FilePath().Remove())
-			assert.Nil(t, b.Restore())
-			got, err := origin.FilePath().Read()
-			assert.Nil(t, err)
-			assert.Equal(t, content, got)
+		t.Run("copy", func(t *testing.T) {
+			t.Run("modify", func(t *testing.T) {
+				b := prepareBackup(t)
+				defer b.Close()
+				assert.Nil(t, b.Copy())
+				assert.Nil(t, origin.FilePath().Write("enoz"))
+				assert.Nil(t, b.Restore())
+				check(t)
+			})
+			t.Run("remove", func(t *testing.T) {
+				b := prepareBackup(t)
+				defer b.Close()
+				assert.Nil(t, b.Copy())
+				assert.Nil(t, origin.FilePath().Remove())
+				assert.Nil(t, b.Restore())
+				check(t)
+			})
 		})
-
 	})
 }

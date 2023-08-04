@@ -97,3 +97,13 @@ func (f FilePath) Copy(dst FilePath) (retErr error) {
 	_, retErr = io.Copy(out, in)
 	return
 }
+
+func (p FilePath) Move(dst FilePath) error {
+	err := os.Rename(p.String(), dst.String())
+	logx.Debug("move file",
+		logx.S("src", p.String()),
+		logx.S("dst", dst.String()),
+		logx.Err(err),
+	)
+	return err
+}
