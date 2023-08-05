@@ -37,6 +37,12 @@ func TestEnv(t *testing.T) {
 		t.Log(e.Expand("value is $A"))
 	})
 
+	t.Run("ignore unknown variables", func(t *testing.T) {
+		e := execx.NewEnv()
+		assert.Equal(t, "value is ${A}", e.Expand("value is ${A}"))
+		assert.Equal(t, "value is ${A}", e.Expand("value is $A"))
+	})
+
 	t.Run("expand strings", func(t *testing.T) {
 		e := execx.EnvFromSlice([]string{"SUBJECT=Alice", "LOCATION1=Virginia", "LOCATION2=Atlanta"})
 		assert.Equal(t, []string{

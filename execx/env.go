@@ -1,6 +1,7 @@
 package execx
 
 import (
+	"berquerant/install-via-git-go/logx"
 	"fmt"
 	"os"
 	"strings"
@@ -69,7 +70,11 @@ func (e Env) IntoSlice() []string {
 }
 
 func (e Env) get(key string) string {
-	return e[key]
+	if value, found := e[key]; found {
+		return value
+	}
+	// no changes
+	return fmt.Sprintf("${%s}", key)
 }
 
 const expandMaxAttempts = 10
@@ -84,6 +89,7 @@ func (e Env) Expand(target string) string {
 		target = result
 		result = os.Expand(result, e.get)
 	}
+	logx.Debug("expand env", logx.S("src", target), logx.S("dst", result))
 	return result
 }
 
