@@ -40,6 +40,7 @@ const skeleton = `# install-via-git configuration.
 # - TupdateToLatestWithLock: pull latest, update lock
 # - Tnoop: no operation for repo, no update required
 # - Tretry: no operation for repo, but continue installation
+# - Tnoupdate: no operation for repo and lock, but continue installation
 #
 # The strategy depends on the following factors:
 # - local repo existence

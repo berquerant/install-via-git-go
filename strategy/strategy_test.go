@@ -10,24 +10,25 @@ import (
 
 func TestFact(t *testing.T) {
 	t.Run("SelectStrategy", func(t *testing.T) {
-		// allRepoExistence := []strategy.RepoExistence{
-		// 	strategy.REnone,
-		// 	strategy.REexist,
-		// }
-		// allLockExistence := []strategy.LockExistence{
-		// 	strategy.LEnone,
-		// 	strategy.LEexist,
-		// }
+		allRepoExistence := []strategy.RepoExistence{
+			strategy.REnone,
+			strategy.REexist,
+		}
+		allLockExistence := []strategy.LockExistence{
+			strategy.LEnone,
+			strategy.LEexist,
+		}
 		allRepoStatus := []strategy.RepoStatus{
 			strategy.RSunknown,
 			strategy.RSconflict,
 			strategy.RSmatch,
 		}
-		allUpdateSpec := []strategy.UpdateSpec{
-			strategy.USunspec,
-			strategy.USforce,
-			strategy.USretry,
-		}
+		// allUpdateSpec := []strategy.UpdateSpec{
+		// 	strategy.USunspec,
+		// 	strategy.USforce,
+		// 	strategy.USretry,
+		// 	strategy.USnoupdate,
+		// }
 
 		testFact := func(
 			want strategy.Type,
@@ -150,7 +151,18 @@ func TestFact(t *testing.T) {
 				[]strategy.RepoExistence{strategy.REnone},
 				[]strategy.LockExistence{strategy.LEnone},
 				allRepoStatus,
-				allUpdateSpec,
+				[]strategy.UpdateSpec{strategy.USunspec, strategy.USretry, strategy.USforce},
+			),
+		)
+
+		t.Run(
+			"noupdate",
+			testFact(
+				strategy.Tnoupdate,
+				allRepoExistence,
+				allLockExistence,
+				allRepoStatus,
+				[]strategy.UpdateSpec{strategy.USnoupdate},
 			),
 		)
 

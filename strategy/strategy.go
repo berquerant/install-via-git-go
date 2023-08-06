@@ -42,6 +42,8 @@ const (
 	USforce
 	// USretry means that continues processing even without repository updates.
 	USretry
+	// USnoupdate means that continues processing without repository updates.
+	USnoupdate
 )
 
 //go:generate go run golang.org/x/tools/cmd/stringer@latest -type=Type -output type_stringer_generated.go
@@ -68,6 +70,8 @@ const (
 	Tnoop
 	// Tretry does nothing but continues processing.
 	Tretry
+	// Tnoupdate does nothing but continues processing.
+	Tnoupdate
 )
 
 func NewFact(re RepoExistence, le LockExistence, rs RepoStatus, us UpdateSpec) Fact {
@@ -87,6 +91,9 @@ type Fact struct {
 }
 
 func (f Fact) SelectStrategy() Type {
+	if f.USpec == USnoupdate {
+		return Tnoupdate
+	}
 	switch f.RExist {
 	case REnone:
 		switch f.LExist {
@@ -159,6 +166,8 @@ func (t Type) Runner(c RunnerConfig) Runner {
 		return NewNoopRunner()
 	case Tretry:
 		return NewRetryRunner()
+	case Tnoupdate:
+		return NewNoUpdateRunner()
 	default:
 		return NewUnknownRunner()
 	}

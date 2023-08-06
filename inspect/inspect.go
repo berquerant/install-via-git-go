@@ -25,14 +25,17 @@ func RepoStatus(ctx context.Context, command git.Command, lockFile filepathx.Fil
 	return strategy.RSconflict
 }
 
-func UpdateSpec(update, retry bool) strategy.UpdateSpec {
-	if retry {
+func UpdateSpec(update, retry, noupdate bool) strategy.UpdateSpec {
+	switch {
+	case noupdate:
+		return strategy.USnoupdate
+	case retry:
 		return strategy.USretry
-	}
-	if update {
+	case update:
 		return strategy.USforce
+	default:
+		return strategy.USunspec
 	}
-	return strategy.USunspec
 }
 
 func LockExistence(lockFile filepathx.FilePath) strategy.LockExistence {

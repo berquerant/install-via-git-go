@@ -28,6 +28,8 @@ func init() {
 	runCmd.Flags().Bool("dry", false, "Execute up to strategy determination, no side effects")
 	runCmd.Flags().String("commit", "", "Fix commit hash")
 	runCmd.Flags().Bool("clean", false, "Remove lockfile and repo before installation")
+	runCmd.Flags().Bool("noupdate", false, "Ignore lock and no update repo, just run scripts")
+	runCmd.MarkFlagsMutuallyExclusive("update", "retry", "clean", "noupdate")
 	rootCmd.AddCommand(runCmd)
 }
 
@@ -58,6 +60,7 @@ func run(cmd *cobra.Command, _ []string) error {
 	logx.Info("git", logx.S("git", gitCommandName), logx.S("workDir", gitWorkDir.String()))
 
 	// prepare restore functions
+	noupdate, _ := cmd.Flags().GetBool("noupdate")
 	clean, _ := cmd.Flags().GetBool("clean")
 	lockFile := workDir.Join(config.LockFile).FilePath()
 	explicitCommit, _ := cmd.Flags().GetString("commit")
@@ -98,7 +101,7 @@ func run(cmd *cobra.Command, _ []string) error {
 		inspect.RepoExistence(cmd.Context(), gitCommand),
 		inspect.LockExistence(lockFile),
 		inspect.RepoStatus(cmd.Context(), gitCommand, lockFile),
-		inspect.UpdateSpec(update, retry),
+		inspect.UpdateSpec(update, retry, noupdate),
 	)
 	// check hashes
 	{
@@ -136,8 +139,9 @@ func run(cmd *cobra.Command, _ []string) error {
 		lockFile:   lockFile,
 		gitCommand: gitCommand,
 		fact:       fact,
+		noupdate:   noupdate,
 	}
-	return runner.Run(cmd.Context())
+	return runner.run(cmd.Context())
 }
 
 type installRunner struct {
@@ -148,9 +152,10 @@ type installRunner struct {
 	lockFile   filepathx.FilePath
 	gitCommand git.Command
 	fact       strategy.Fact
+	noupdate   bool
 }
 
-func (r *installRunner) Run(ctx context.Context) error {
+func (r *installRunner) run(ctx context.Context) error {
 	if err := r.workDir.Ensure(); err != nil {
 		return errorx.Errorf(err, "ensure workDir")
 	}
@@ -181,22 +186,60 @@ func (r *installRunner) Run(ctx context.Context) error {
 		)),
 	}
 	logx.Info("run strategy", logx.S("type", r.fact.SelectStrategy().String()))
-	if err := runner.run(ctx); err != nil {
-		logx.Error("rollback", logx.Err(err))
-		if err := keeper.Rollback(ctx); err != nil {
-			logx.Error("rollback error", logx.Err(err))
+	err := runner.run(ctx)
+	if err == nil {
+		if r.noupdate {
+			return nil
 		}
-		return err
+		if err := keeper.Commit(); err != nil {
+			return errorx.Errorf(err, "commit")
+		}
+		return nil
 	}
-	if err := keeper.Commit(); err != nil {
-		return errorx.Errorf(err, "commit")
+
+	logx.Error("run strategy", logx.Err(err))
+	rRunner := &rollbackRunner{
+		config:   r.config,
+		keeper:   keeper,
+		workDir:  r.gitWorkDir,
+		env:      r.env,
+		noupdate: r.noupdate,
 	}
-	return nil
+	rRunner.run(ctx)
+	return err
+}
+
+type rollbackRunner struct {
+	config   *Config
+	keeper   *gitlock.GitKeeper
+	workDir  filepathx.DirPath // local repo dir
+	env      execx.Env
+	noupdate bool
+}
+
+func (r *rollbackRunner) run(ctx context.Context) {
+	if r.noupdate {
+		logx.Info("skip rollback repo and lockfile")
+		if _, err := stringsToExecutor(r.config.Steps.Rollback).
+			Execute(ctx, execx.WithDir(r.workDir), execx.WithEnv(r.env)); err != nil {
+			logx.Error("run rollback", logx.Err(err))
+		}
+		return
+	}
+
+	logx.Error("rollback")
+	if err := r.keeper.Rollback(ctx); err != nil {
+		logx.Error("rollback error", logx.Err(err))
+	}
+	if _, err := stringsToExecutor(r.config.Steps.Rollback).
+		Execute(ctx, execx.WithDir(r.workDir), execx.WithEnv(r.env)); err != nil {
+		logx.Error("run rollback", logx.Err(err))
+	}
 }
 
 type strategyRunner struct {
 	config  *Config
-	workDir filepathx.DirPath
+	workDir filepathx.DirPath // local repo dir
 	env     execx.Env
 	runner  strategy.Runner
 }
@@ -232,6 +275,7 @@ func stringsToExecutor(scripts []string) execx.Executor {
 }
 
 func noopRestore() error {
+	logx.Info("noop restore")
 	return nil
 }
 

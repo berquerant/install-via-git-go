@@ -214,6 +214,17 @@ func (*RetryRunner) Run(_ context.Context) error {
 	return nil
 }
 
+func NewNoUpdateRunner() *NoUpdateRunner {
+	return &NoUpdateRunner{}
+}
+
+type NoUpdateRunner struct {
+}
+
+func (*NoUpdateRunner) Run(_ context.Context) error {
+	return nil
+}
+
 func NewNoopRunner() *NoopRunner {
 	return &NoopRunner{}
 }
