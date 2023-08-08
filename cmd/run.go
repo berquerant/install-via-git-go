@@ -29,6 +29,7 @@ func init() {
 	runCmd.Flags().String("commit", "", "Fix commit hash")
 	runCmd.Flags().Bool("clean", false, "Remove lockfile and repo before installation")
 	runCmd.Flags().Bool("noupdate", false, "Ignore lock and no update repo, just run scripts")
+	runCmd.Flags().String("shell", "bash", "Shell used to run scripts")
 	runCmd.MarkFlagsMutuallyExclusive("update", "retry", "clean", "noupdate")
 	rootCmd.AddCommand(runCmd)
 }
@@ -130,6 +131,7 @@ func run(cmd *cobra.Command, _ []string) error {
 		return nil
 	}
 
+	shell, _ := cmd.Flags().GetString("shell")
 	logx.Info("start installation!")
 	runner := &installRunner{
 		config:     config,
@@ -140,6 +142,7 @@ func run(cmd *cobra.Command, _ []string) error {
 		gitCommand: gitCommand,
 		fact:       fact,
 		noupdate:   noupdate,
+		shell:      shell,
 	}
 	return runner.run(cmd.Context())
 }
@@ -153,6 +156,7 @@ type installRunner struct {
 	gitCommand git.Command
 	fact       strategy.Fact
 	noupdate   bool
+	shell      string
 }
 
 func (r *installRunner) run(ctx context.Context) error {
@@ -164,7 +168,7 @@ func (r *installRunner) run(ctx context.Context) error {
 	}
 
 	logx.Info("setup")
-	if _, err := stringsToExecutor(r.config.Steps.Setup).
+	if _, err := stringsToExecutor(r.config.Steps.Setup, r.shell).
 		Execute(ctx, execx.WithEnv(r.env), execx.WithDir(r.workDir)); err != nil {
 		return errorx.Errorf(err, "setup")
 	}
@@ -184,6 +188,7 @@ func (r *installRunner) run(ctx context.Context) error {
 			keeper.Locker().Pair(),
 			r.gitCommand,
 		)),
+		shell: r.shell,
 	}
 	logx.Info("run strategy", logx.S("type", r.fact.SelectStrategy().String()))
 	err := runner.run(ctx)
@@ -204,6 +209,7 @@ func (r *installRunner) run(ctx context.Context) error {
 		workDir:  r.gitWorkDir,
 		env:      r.env,
 		noupdate: r.noupdate,
+		shell:    r.shell,
 	}
 	rRunner.run(ctx)
 	return err
@@ -215,12 +221,13 @@ type rollbackRunner struct {
 	workDir  filepathx.DirPath // local repo dir
 	env      execx.Env
 	noupdate bool
+	shell    string
 }
 
 func (r *rollbackRunner) run(ctx context.Context) {
 	if r.noupdate {
 		logx.Info("skip rollback repo and lockfile")
-		if _, err := stringsToExecutor(r.config.Steps.Rollback).
+		if _, err := stringsToExecutor(r.config.Steps.Rollback, r.shell).
 			Execute(ctx, execx.WithDir(r.workDir), execx.WithEnv(r.env)); err != nil {
 			logx.Error("run rollback", logx.Err(err))
 		}
@@ -231,7 +238,7 @@ func (r *rollbackRunner) run(ctx context.Context) {
 	if err := r.keeper.Rollback(ctx); err != nil {
 		logx.Error("rollback error", logx.Err(err))
 	}
-	if _, err := stringsToExecutor(r.config.Steps.Rollback).
+	if _, err := stringsToExecutor(r.config.Steps.Rollback, r.shell).
 		Execute(ctx, execx.WithDir(r.workDir), execx.WithEnv(r.env)); err != nil {
 		logx.Error("run rollback", logx.Err(err))
 	}
@@ -242,6 +249,7 @@ type strategyRunner struct {
 	workDir filepathx.DirPath // local repo dir
 	env     execx.Env
 	runner  strategy.Runner
+	shell   string
 }
 
 func (s *strategyRunner) run(ctx context.Context) error {
@@ -251,7 +259,7 @@ func (s *strategyRunner) run(ctx context.Context) error {
 		}
 
 		logx.Info("skip")
-		if _, err := stringsToExecutor(s.config.Steps.Skip).
+		if _, err := stringsToExecutor(s.config.Steps.Skip, s.shell).
 			Execute(ctx, execx.WithDir(s.workDir), execx.WithEnv(s.env)); err != nil {
 			return errorx.Errorf(err, "run skip")
 		}
@@ -259,19 +267,19 @@ func (s *strategyRunner) run(ctx context.Context) error {
 	}
 
 	logx.Info("install")
-	if _, err := stringsToExecutor(s.config.Steps.Install).
+	if _, err := stringsToExecutor(s.config.Steps.Install, s.shell).
 		Execute(ctx, execx.WithDir(s.workDir), execx.WithEnv(s.env)); err != nil {
 		return errorx.Errorf(err, "run install")
 	}
 	return nil
 }
 
-func stringsToExecutor(scripts []string) execx.Executor {
+func stringsToExecutor(scripts []string, shell string) execx.Executor {
 	if len(scripts) == 0 {
 		return execx.NewNoopExecutor()
 	}
 	script := strings.Join(scripts, "\n")
-	return execx.NewRawScript("set -ex\n" + script)
+	return execx.NewRawScript("set -ex\n"+script, shell)
 }
 
 func noopRestore() error {

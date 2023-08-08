@@ -78,7 +78,7 @@ echo err >&2`,
 		} {
 			tc := tc
 			t.Run(tc.title, func(t *testing.T) {
-				r, err := execx.NewRawScript(tc.script).Execute(context.TODO(), withDir, execx.WithEnv(tc.env))
+				r, err := execx.NewRawScript(tc.script, "bash").Execute(context.TODO(), withDir, execx.WithEnv(tc.env))
 				if !assert.Nil(t, err) {
 					return
 				}

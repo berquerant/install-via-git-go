@@ -7,14 +7,16 @@ import (
 	"os"
 )
 
-func NewRawScript(content string) *RawScript {
+func NewRawScript(content, shell string) *RawScript {
 	return &RawScript{
 		content: content,
+		shell:   shell,
 	}
 }
 
 type RawScript struct {
 	content string
+	shell   string
 }
 
 func (s *RawScript) Execute(ctx context.Context, opt ...ConfigOption) (result Result, retErr error) {
@@ -45,13 +47,13 @@ func (s *RawScript) Execute(ctx context.Context, opt ...ConfigOption) (result Re
 	}
 
 	p, _ := filepathx.NewPath(f.Name())
-	result, retErr = NewScript(p.FilePath()).Execute(ctx, opt...)
+	result, retErr = NewScript(p.FilePath(), s.shell).Execute(ctx, opt...)
 	return
 }
 
-// NewScript returns a new Command that executes the script by bash.
-func NewScript(path filepathx.FilePath) *Command {
+// NewScript returns a new Command that executes the script.
+func NewScript(path filepathx.FilePath, shell string) *Command {
 	return &Command{
-		args: []string{"bash", path.String()},
+		args: []string{shell, path.String()},
 	}
 }
