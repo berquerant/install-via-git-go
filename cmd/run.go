@@ -20,6 +20,7 @@ import (
 
 func init() {
 	setConfigFlag(runCmd)
+	setShellFlag(runCmd)
 	runCmd.Flags().String("git", "git", "Git command")
 	runCmd.Flags().StringP("workDir", "w", ".", "Working directory")
 	fail(runCmd.MarkFlagDirname("workDir"))
@@ -29,7 +30,6 @@ func init() {
 	runCmd.Flags().String("commit", "", "Fix commit hash")
 	runCmd.Flags().Bool("clean", false, "Remove lockfile and repo before installation")
 	runCmd.Flags().Bool("noupdate", false, "Ignore lock and no update repo, just run scripts")
-	runCmd.Flags().String("shell", "bash", "Shell used to run scripts")
 	runCmd.MarkFlagsMutuallyExclusive("update", "retry", "clean", "noupdate")
 	rootCmd.AddCommand(runCmd)
 }
@@ -131,8 +131,8 @@ func run(cmd *cobra.Command, _ []string) error {
 		return nil
 	}
 
-	shell, _ := cmd.Flags().GetString("shell")
-	logx.Info("start installation!")
+	shell := getShell(cmd, config)
+	logx.Info("start installation!", logx.SS("shell", shell))
 	runner := &installRunner{
 		config:     config,
 		workDir:    workDir.DirPath(),
@@ -156,7 +156,7 @@ type installRunner struct {
 	gitCommand git.Command
 	fact       strategy.Fact
 	noupdate   bool
-	shell      string
+	shell      []string
 }
 
 func (r *installRunner) run(ctx context.Context) error {
@@ -221,7 +221,7 @@ type rollbackRunner struct {
 	workDir  filepathx.DirPath // local repo dir
 	env      execx.Env
 	noupdate bool
-	shell    string
+	shell    []string
 }
 
 func (r *rollbackRunner) run(ctx context.Context) {
@@ -249,7 +249,7 @@ type strategyRunner struct {
 	workDir filepathx.DirPath // local repo dir
 	env     execx.Env
 	runner  strategy.Runner
-	shell   string
+	shell   []string
 }
 
 func (s *strategyRunner) run(ctx context.Context) error {
@@ -274,12 +274,12 @@ func (s *strategyRunner) run(ctx context.Context) error {
 	return nil
 }
 
-func stringsToExecutor(scripts []string, shell string) execx.Executor {
+func stringsToExecutor(scripts, shell []string) execx.Executor {
 	if len(scripts) == 0 {
 		return execx.NewNoopExecutor()
 	}
 	script := strings.Join(scripts, "\n")
-	return execx.NewRawScript("set -ex\n"+script, shell)
+	return execx.NewRawScript("set -ex\n"+script, shell...)
 }
 
 func noopRestore() error {

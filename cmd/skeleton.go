@@ -58,7 +58,11 @@ branch: master
 locald: localrepo
 # file to store commit hash (optional, default is lock).
 # empty file is assumed to not exist
-lock: lockfil
+lock: lockfile
+# shell to execute scripts (setup, install, ...) (optional).
+# command line "--shell" overrides this.
+shell:
+  - /bin/bash
 # environment variables (optional).
 # setup, install, rollback, skip can refer the following variables:
 # - IVG_URI=value of repository

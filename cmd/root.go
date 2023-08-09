@@ -25,6 +25,7 @@ type (
 		LockFile string            `yaml:"lock,omitempty" json:"lock,omitempty"`
 		Steps    Steps             `yaml:"steps,inline" json:"steps"`
 		Env      map[string]string `yaml:"env,omitempty" json:"env,omitempty"`
+		Shell    []string          `yaml:"shell,omitempty" json:"shell,omitempty"`
 	}
 
 	Steps struct {
@@ -165,4 +166,20 @@ func fail(err error) {
 	}
 	logx.Error("fail", logx.Err(err))
 	exit.Fail()
+}
+
+func setShellFlag(cmd *cobra.Command) {
+	cmd.Flags().StringSlice(
+		"shell", []string{}, "Shell used to run scripts, separated by comma, e.g. arch,--arm64e,/bin/bash")
+}
+
+func getShell(cmd *cobra.Command, config *Config) []string {
+	shell, _ := cmd.Flags().GetStringSlice("shell")
+	if len(shell) > 0 {
+		return shell
+	}
+	if len(config.Shell) > 0 {
+		return config.Shell
+	}
+	return []string{"bash"}
 }
