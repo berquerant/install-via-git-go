@@ -19,6 +19,16 @@ type Executor interface {
 	Execute(ctx context.Context, opt ...ConfigOption) (Result, error)
 }
 
+func NewExecutorFromStrings(scripts []string, shell ...string) Executor {
+	if len(scripts) == 0 {
+		return NewNoopExecutor()
+	}
+	return NewRawScript(
+		"set -ex\n"+strings.Join(scripts, "\n"),
+		shell...,
+	)
+}
+
 func NewNoopExecutor() *NoopExecutor {
 	return &NoopExecutor{}
 }

@@ -4,6 +4,8 @@ import (
 	"berquerant/install-via-git-go/execx"
 	"berquerant/install-via-git-go/filepathx"
 	"context"
+	"fmt"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -46,6 +48,40 @@ func TestExecute(t *testing.T) {
 				assert.Equal(t, tc.stderr, r.Stderr)
 			})
 		}
+	})
+
+	t.Run("script from strings success", func(t *testing.T) {
+		r, err := execx.NewExecutorFromStrings([]string{
+			"echo one",
+			"echo two",
+		}, "bash").Execute(context.TODO())
+		assert.Nil(t, err)
+		assert.Equal(t, "one\ntwo\n", r.Stdout)
+	})
+
+	t.Run("script from strings failfast", func(t *testing.T) {
+		t.Run("touched", func(t *testing.T) {
+			tmpfile := filepath.Join(t.TempDir(), "touched")
+			_, err := execx.NewExecutorFromStrings([]string{
+				"echo one",
+				fmt.Sprintf("touch %s", tmpfile),
+				"which unknowncommand",
+			}, "bash").Execute(context.TODO())
+			assert.NotNil(t, err)
+			assert.FileExists(t, tmpfile)
+		})
+
+		t.Run("not touched", func(t *testing.T) {
+			tmpfile := filepath.Join(t.TempDir(), "not_touched")
+			_, err := execx.NewExecutorFromStrings([]string{
+				"echo one",
+				"which unknowncommand",
+				fmt.Sprintf("touch %s", tmpfile),
+			}, "bash").Execute(context.TODO())
+			assert.NotNil(t, err)
+			p, _ := filepathx.NewPath(tmpfile)
+			assert.False(t, p.FilePath().Exist())
+		})
 	})
 
 	t.Run("script", func(t *testing.T) {

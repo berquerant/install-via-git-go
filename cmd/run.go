@@ -13,7 +13,6 @@ import (
 	"berquerant/install-via-git-go/strategy"
 	"context"
 	"errors"
-	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -168,7 +167,7 @@ func (r *installRunner) run(ctx context.Context) error {
 	}
 
 	logx.Info("setup")
-	if _, err := stringsToExecutor(r.config.Steps.Setup, r.shell).
+	if _, err := execx.NewExecutorFromStrings(r.config.Steps.Setup, r.shell...).
 		Execute(ctx, execx.WithEnv(r.env), execx.WithDir(r.workDir)); err != nil {
 		return errorx.Errorf(err, "setup")
 	}
@@ -227,7 +226,7 @@ type rollbackRunner struct {
 func (r *rollbackRunner) run(ctx context.Context) {
 	if r.noupdate {
 		logx.Info("skip rollback repo and lockfile")
-		if _, err := stringsToExecutor(r.config.Steps.Rollback, r.shell).
+		if _, err := execx.NewExecutorFromStrings(r.config.Steps.Rollback, r.shell...).
 			Execute(ctx, execx.WithDir(r.workDir), execx.WithEnv(r.env)); err != nil {
 			logx.Error("run rollback", logx.Err(err))
 		}
@@ -238,7 +237,7 @@ func (r *rollbackRunner) run(ctx context.Context) {
 	if err := r.keeper.Rollback(ctx); err != nil {
 		logx.Error("rollback error", logx.Err(err))
 	}
-	if _, err := stringsToExecutor(r.config.Steps.Rollback, r.shell).
+	if _, err := execx.NewExecutorFromStrings(r.config.Steps.Rollback, r.shell...).
 		Execute(ctx, execx.WithDir(r.workDir), execx.WithEnv(r.env)); err != nil {
 		logx.Error("run rollback", logx.Err(err))
 	}
@@ -259,7 +258,7 @@ func (s *strategyRunner) run(ctx context.Context) error {
 		}
 
 		logx.Info("skip")
-		if _, err := stringsToExecutor(s.config.Steps.Skip, s.shell).
+		if _, err := execx.NewExecutorFromStrings(s.config.Steps.Skip, s.shell...).
 			Execute(ctx, execx.WithDir(s.workDir), execx.WithEnv(s.env)); err != nil {
 			return errorx.Errorf(err, "run skip")
 		}
@@ -267,19 +266,11 @@ func (s *strategyRunner) run(ctx context.Context) error {
 	}
 
 	logx.Info("install")
-	if _, err := stringsToExecutor(s.config.Steps.Install, s.shell).
+	if _, err := execx.NewExecutorFromStrings(s.config.Steps.Install, s.shell...).
 		Execute(ctx, execx.WithDir(s.workDir), execx.WithEnv(s.env)); err != nil {
 		return errorx.Errorf(err, "run install")
 	}
 	return nil
-}
-
-func stringsToExecutor(scripts, shell []string) execx.Executor {
-	if len(scripts) == 0 {
-		return execx.NewNoopExecutor()
-	}
-	script := strings.Join(scripts, "\n")
-	return execx.NewRawScript("set -ex\n"+script, shell...)
 }
 
 func noopRestore() error {
