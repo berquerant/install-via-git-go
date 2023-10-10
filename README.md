@@ -15,9 +15,8 @@ Available Commands:
   skeleton    Generate config skeleton
 
 Flags:
-      --debug           Enable debug logs
-  -h, --help            help for install-via-git
-      --logger string   logger type [zap, block] (default "block")
+      --debug   Enable debug logs
+  -h, --help    help for install-via-git
 
 Use "install-via-git [command] --help" for more information about a command.
 ```

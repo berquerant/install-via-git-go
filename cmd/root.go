@@ -51,8 +51,7 @@ var (
 		Long:  `install-via-git installs tools via git.`,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			debug, _ := cmd.Flags().GetBool("debug")
-			logger, _ := cmd.Flags().GetString("logger")
-			logx.Setup(debug, intoLoggerType(logger))
+			logx.Setup(debug)
 			cmd.SetOut(os.Stdout)
 			displayFlags(cmd.Flags())
 		},
@@ -75,16 +74,6 @@ func Execute() error {
 
 func init() {
 	rootCmd.PersistentFlags().Bool("debug", false, "Enable debug logs")
-	rootCmd.PersistentFlags().String("logger", "block", "logger type [zap, block]")
-}
-
-func intoLoggerType(value string) logx.Type {
-	switch value {
-	case "zap":
-		return logx.Tzap
-	default:
-		return logx.Tblock
-	}
 }
 
 func displayFlags(flags *pflag.FlagSet) {
