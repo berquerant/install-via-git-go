@@ -42,9 +42,9 @@ issues:
       linters:
         - gosec
     - path: logx/
-      text: fmt.Println
+      text: "SA1012:"
       linters:
-        - forbidigo
+        - staticcheck
     - path: logx/
       linters:
         - gochecknoglobals
