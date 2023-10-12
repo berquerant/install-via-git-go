@@ -27,7 +27,7 @@ clean-generated:
 
 .PHONY: vuln
 vuln:
-	go run golang.org/x/vuln/cmd/govulncheck@dc254a37b504c72564734ba346000244a97630a9 ./...
+	go run golang.org/x/vuln/cmd/govulncheck ./...
 
 DOCKER_RUN = docker run --rm -v "$(ROOT)":/usr/src/myapp -w /usr/src/myapp
 DOCKER_GO_IMAGE = golang:1.21
