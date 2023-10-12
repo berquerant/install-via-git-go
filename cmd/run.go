@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"berquerant/install-via-git-go/backup"
 	"berquerant/install-via-git-go/config"
 	"berquerant/install-via-git-go/errorx"
 	"berquerant/install-via-git-go/execx"
@@ -11,6 +10,7 @@ import (
 	"berquerant/install-via-git-go/inspect"
 	"berquerant/install-via-git-go/lock"
 	"berquerant/install-via-git-go/logx"
+	"berquerant/install-via-git-go/runner"
 	"berquerant/install-via-git-go/strategy"
 	"context"
 	"errors"
@@ -41,6 +41,15 @@ var runCmd = &cobra.Command{
 	RunE:  run,
 }
 
+func newEnv(cfg *config.Config) execx.Env {
+	env := execx.EnvFromMap(cfg.Env)
+	// set builtin envs
+	env.Set("IVG_URI", cfg.URI)
+	env.Set("IVG_BRANCH", cfg.Branch)
+	env.Set("IVG_LOCALD", cfg.LocalDir)
+	env.Set("IVG_LOCK", cfg.LockFile)
+	return env
+}
 func run(cmd *cobra.Command, _ []string) error {
 	// load config
 	cfg, err := parseConfigFromFlag(cmd)
@@ -65,34 +74,22 @@ func run(cmd *cobra.Command, _ []string) error {
 	clean, _ := cmd.Flags().GetBool("clean")
 	lockFile := workDir.Join(cfg.LockFile).FilePath()
 	explicitCommit, _ := cmd.Flags().GetString("commit")
-	// restore lockfile when dryrun and given explicit commit or clean install
-	restoreLockFile, err := prepareBackupForLockfile(lockFile, explicitCommit, clean)
-	if err != nil {
-		return errorx.Errorf(err, "backup lockfile")
-	}
 
-	// restore repo when clean install and local repo exist
-	restoreRepo, err := prepareBackupForRepo(gitWorkDir, clean)
-	if err != nil {
-		return errorx.Errorf(err, "backup repo")
+	backupList := runner.NewBackupList(
+		runner.NewLockFileBackup(lockFile, explicitCommit, clean),
+		runner.NewRepoBackup(gitWorkDir, clean),
+	)
+	if err := backupList.Create(); err != nil {
+		return err
 	}
-
 	dry, _ := cmd.Flags().GetBool("dry")
-	restore := func() {
-		if !dry {
-			return
-		}
-
-		logx.Info("restore lockfile", logx.S("path", lockFile.String()))
-		if err := restoreLockFile(); err != nil {
-			logx.Error("restore lockfile", logx.Err(err))
-		}
-		logx.Info("restore repo", logx.S("path", gitWorkDir.String()))
-		if err := restoreRepo(); err != nil {
-			logx.Error("restore repo", logx.Err(err))
-		}
+	if !dry {
+		defer func() {
+			if err := backupList.Restore(); err != nil {
+				logx.Error("restore backup", logx.Err(err))
+			}
+		}()
 	}
-	defer restore()
 
 	update, _ := cmd.Flags().GetBool("update")
 	retry, _ := cmd.Flags().GetBool("retry")
@@ -272,58 +269,4 @@ func (s *strategyRunner) run(ctx context.Context) error {
 		return errorx.Errorf(err, "run install")
 	}
 	return nil
-}
-
-func noopRestore() error {
-	logx.Info("noop restore")
-	return nil
-}
-
-func prepareBackupForLockfile(lockFile filepathx.FilePath, commit string, clean bool) (func() error, error) {
-	if !(commit != "" || clean) {
-		// no need to backup
-		return noopRestore, nil
-	}
-
-	logx.Info("backup lockfile",
-		logx.S("path", lockFile.String()),
-		logx.S("explicitCommit", commit),
-		logx.B("clean", clean),
-	)
-	// override current commit by explicit commit
-	lockFileBackup, err := backup.IntoTempDir(lockFile.Path)
-	if err != nil {
-		return nil, err
-	}
-	if err := lockFileBackup.Move(); err != nil {
-		return nil, err
-	}
-
-	if commit != "" {
-		if err := lockFile.Write(commit); err != nil {
-			return nil, errorx.Errorf(err, "override commit")
-		}
-	}
-	return func() error {
-		return lockFileBackup.Restore()
-	}, nil
-}
-
-func prepareBackupForRepo(gitWorkDir filepathx.DirPath, clean bool) (func() error, error) {
-	if !(clean && gitWorkDir.Exist()) {
-		// no need to backup
-		return noopRestore, nil
-	}
-
-	logx.Info("backup repo", logx.S("path", gitWorkDir.String()))
-	repoBackup, err := backup.IntoTempDir(gitWorkDir.Path)
-	if err != nil {
-		return nil, err
-	}
-	if err := repoBackup.Rename(); err != nil {
-		return nil, err
-	}
-	return func() error {
-		return repoBackup.Restore(backup.WithRename(true))
-	}, nil
 }

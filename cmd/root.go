@@ -3,7 +3,6 @@ package cmd
 import (
 	"berquerant/install-via-git-go/config"
 	"berquerant/install-via-git-go/errorx"
-	"berquerant/install-via-git-go/execx"
 	"berquerant/install-via-git-go/exit"
 	"berquerant/install-via-git-go/filepathx"
 	"berquerant/install-via-git-go/logx"
@@ -108,16 +107,6 @@ func parseConfigFile(cfgFile string) (*config.Config, error) {
 func getPath(cmd *cobra.Command, name string) (filepathx.Path, error) {
 	v, _ := cmd.Flags().GetString(name)
 	return filepathx.NewPath(v)
-}
-
-func newEnv(cfg *config.Config) execx.Env {
-	env := execx.EnvFromMap(cfg.Env)
-	// set builtin envs
-	env.Set("IVG_URI", cfg.URI)
-	env.Set("IVG_BRANCH", cfg.Branch)
-	env.Set("IVG_LOCALD", cfg.LocalDir)
-	env.Set("IVG_LOCK", cfg.LockFile)
-	return env
 }
 
 func fail(err error) {
