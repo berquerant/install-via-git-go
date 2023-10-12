@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"berquerant/install-via-git-go/backup"
+	"berquerant/install-via-git-go/config"
 	"berquerant/install-via-git-go/errorx"
 	"berquerant/install-via-git-go/execx"
 	"berquerant/install-via-git-go/filepathx"
@@ -42,7 +43,7 @@ var runCmd = &cobra.Command{
 
 func run(cmd *cobra.Command, _ []string) error {
 	// load config
-	config, err := parseConfigFromFlag(cmd)
+	cfg, err := parseConfigFromFlag(cmd)
 	if err != nil {
 		return err
 	}
@@ -53,8 +54,8 @@ func run(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return errorx.Errorf(err, "invalid workDir")
 	}
-	gitWorkDir := workDir.Join(config.LocalDir).DirPath()
-	env := newEnv(config)
+	gitWorkDir := workDir.Join(cfg.LocalDir).DirPath()
+	env := newEnv(cfg)
 	env.Set("IVG_WORKD", workDir.String())
 	gitCommand := git.NewCommand(git.NewCLI(gitWorkDir, env, gitCommandName))
 	logx.Info("git", logx.S("git", gitCommandName), logx.S("workDir", gitWorkDir.String()))
@@ -62,7 +63,7 @@ func run(cmd *cobra.Command, _ []string) error {
 	// prepare restore functions
 	noupdate, _ := cmd.Flags().GetBool("noupdate")
 	clean, _ := cmd.Flags().GetBool("clean")
-	lockFile := workDir.Join(config.LockFile).FilePath()
+	lockFile := workDir.Join(cfg.LockFile).FilePath()
 	explicitCommit, _ := cmd.Flags().GetString("commit")
 	// restore lockfile when dryrun and given explicit commit or clean install
 	restoreLockFile, err := prepareBackupForLockfile(lockFile, explicitCommit, clean)
@@ -130,10 +131,10 @@ func run(cmd *cobra.Command, _ []string) error {
 		return nil
 	}
 
-	shell := getShell(cmd, config)
+	shell := getShell(cmd, cfg)
 	logx.Info("start installation!", logx.SS("shell", shell))
 	runner := &installRunner{
-		config:     config,
+		cfg:        cfg,
 		workDir:    workDir.DirPath(),
 		gitWorkDir: gitWorkDir,
 		env:        env,
@@ -147,7 +148,7 @@ func run(cmd *cobra.Command, _ []string) error {
 }
 
 type installRunner struct {
-	config     *Config
+	cfg        *config.Config
 	workDir    filepathx.DirPath
 	gitWorkDir filepathx.DirPath
 	env        execx.Env
@@ -167,7 +168,7 @@ func (r *installRunner) run(ctx context.Context) error {
 	}
 
 	logx.Info("setup")
-	if _, err := execx.NewExecutorFromStrings(r.config.Steps.Setup, r.shell...).
+	if _, err := execx.NewExecutorFromStrings(r.cfg.Steps.Setup, r.shell...).
 		Execute(ctx, execx.WithEnv(r.env), execx.WithDir(r.workDir)); err != nil {
 		return errorx.Errorf(err, "setup")
 	}
@@ -178,12 +179,12 @@ func (r *installRunner) run(ctx context.Context) error {
 
 	keeper := gitlock.NewGitKeeper(lock.NewFileKeeper(r.lockFile), r.gitCommand)
 	runner := &strategyRunner{
-		config:  r.config,
+		cfg:     r.cfg,
 		workDir: r.gitWorkDir,
 		env:     r.env,
 		runner: r.fact.SelectStrategy().Runner(strategy.NewRunnerConfig(
-			r.config.URI,
-			r.config.Branch,
+			r.cfg.URI,
+			r.cfg.Branch,
 			keeper.Locker().Pair(),
 			r.gitCommand,
 		)),
@@ -203,7 +204,7 @@ func (r *installRunner) run(ctx context.Context) error {
 
 	logx.Error("run strategy", logx.Err(err))
 	rRunner := &rollbackRunner{
-		config:   r.config,
+		cfg:      r.cfg,
 		keeper:   keeper,
 		workDir:  r.gitWorkDir,
 		env:      r.env,
@@ -215,7 +216,7 @@ func (r *installRunner) run(ctx context.Context) error {
 }
 
 type rollbackRunner struct {
-	config   *Config
+	cfg      *config.Config
 	keeper   *gitlock.GitKeeper
 	workDir  filepathx.DirPath // local repo dir
 	env      execx.Env
@@ -226,7 +227,7 @@ type rollbackRunner struct {
 func (r *rollbackRunner) run(ctx context.Context) {
 	if r.noupdate {
 		logx.Info("skip rollback repo and lockfile")
-		if _, err := execx.NewExecutorFromStrings(r.config.Steps.Rollback, r.shell...).
+		if _, err := execx.NewExecutorFromStrings(r.cfg.Steps.Rollback, r.shell...).
 			Execute(ctx, execx.WithDir(r.workDir), execx.WithEnv(r.env)); err != nil {
 			logx.Error("run rollback", logx.Err(err))
 		}
@@ -237,14 +238,14 @@ func (r *rollbackRunner) run(ctx context.Context) {
 	if err := r.keeper.Rollback(ctx); err != nil {
 		logx.Error("rollback error", logx.Err(err))
 	}
-	if _, err := execx.NewExecutorFromStrings(r.config.Steps.Rollback, r.shell...).
+	if _, err := execx.NewExecutorFromStrings(r.cfg.Steps.Rollback, r.shell...).
 		Execute(ctx, execx.WithDir(r.workDir), execx.WithEnv(r.env)); err != nil {
 		logx.Error("run rollback", logx.Err(err))
 	}
 }
 
 type strategyRunner struct {
-	config  *Config
+	cfg     *config.Config
 	workDir filepathx.DirPath // local repo dir
 	env     execx.Env
 	runner  strategy.Runner
@@ -258,7 +259,7 @@ func (s *strategyRunner) run(ctx context.Context) error {
 		}
 
 		logx.Info("skip")
-		if _, err := execx.NewExecutorFromStrings(s.config.Steps.Skip, s.shell...).
+		if _, err := execx.NewExecutorFromStrings(s.cfg.Steps.Skip, s.shell...).
 			Execute(ctx, execx.WithDir(s.workDir), execx.WithEnv(s.env)); err != nil {
 			return errorx.Errorf(err, "run skip")
 		}
@@ -266,7 +267,7 @@ func (s *strategyRunner) run(ctx context.Context) error {
 	}
 
 	logx.Info("install")
-	if _, err := execx.NewExecutorFromStrings(s.config.Steps.Install, s.shell...).
+	if _, err := execx.NewExecutorFromStrings(s.cfg.Steps.Install, s.shell...).
 		Execute(ctx, execx.WithDir(s.workDir), execx.WithEnv(s.env)); err != nil {
 		return errorx.Errorf(err, "run install")
 	}

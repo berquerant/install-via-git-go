@@ -107,3 +107,9 @@ func (f FilePath) Move(dst FilePath) error {
 	)
 	return err
 }
+
+func (f FilePath) Open() (*os.File, error) {
+	file, err := os.Open(f.String())
+	logx.Debug("open file", logx.S("path", f.String()), logx.Err(err))
+	return file, err
+}

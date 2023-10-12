@@ -1,48 +1,19 @@
 package cmd
 
 import (
+	"berquerant/install-via-git-go/config"
 	"berquerant/install-via-git-go/errorx"
 	"berquerant/install-via-git-go/execx"
 	"berquerant/install-via-git-go/exit"
 	"berquerant/install-via-git-go/filepathx"
 	"berquerant/install-via-git-go/logx"
 	"context"
-	"errors"
-	"io"
 	"os"
 	"os/signal"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"gopkg.in/yaml.v3"
 )
-
-type (
-	Config struct {
-		URI      string            `yaml:"uri" json:"uri"`
-		Branch   string            `yaml:"branch,omitempty" json:"branch,omitempty"`
-		LocalDir string            `yaml:"locald,omitempty" json:"locald,omitempty"`
-		LockFile string            `yaml:"lock,omitempty" json:"lock,omitempty"`
-		Steps    Steps             `yaml:"steps,inline" json:"steps"`
-		Env      map[string]string `yaml:"env,omitempty" json:"env,omitempty"`
-		Shell    []string          `yaml:"shell,omitempty" json:"shell,omitempty"`
-	}
-
-	Steps struct {
-		Setup    []string `yaml:"setup,omitempty" json:"setup,omitempty"`
-		Install  []string `yaml:"install,omitempty" json:"install,omitempty"`
-		Rollback []string `yaml:"rollback,omitempty" json:"rollback,omitempty"`
-		Skip     []string `yaml:"skip,omitempty" json:"skip,omitempty"`
-	}
-)
-
-func defaultConfig() Config {
-	return Config{
-		Branch:   "main",
-		LockFile: "lock",
-		LocalDir: "repo",
-	}
-}
 
 var (
 	rootCmd = &cobra.Command{
@@ -92,46 +63,46 @@ func setConfigFlag(cmd *cobra.Command) {
 	fail(cmd.MarkFlagFilename("config", "yml", "yaml"))
 }
 
-func parseConfigFromFlag(cmd *cobra.Command) (*Config, error) {
+func parseConfigFromFlag(cmd *cobra.Command) (*config.Config, error) {
 	cfg, _ := cmd.Flags().GetString("config")
 	return parseConfigFromOption(cfg)
 }
 
-func parseConfigFromOption(opt string) (*Config, error) {
+func parseConfigFromOption(opt string) (*config.Config, error) {
 	logx.Info("config", logx.S("value", opt))
 	if opt == "-" {
-		content, err := io.ReadAll(os.Stdin)
-		if err != nil {
-			return nil, errorx.Errorf(err, "read config from stdin")
-		}
-		return parseConfig(string(content))
+		return parseConfigFromStdin()
 	}
 	return parseConfigFile(opt)
 }
 
-func parseConfig(content string) (*Config, error) {
-	config := defaultConfig()
-	if err := yaml.Unmarshal([]byte(content), &config); err != nil {
-		return nil, errorx.Errorf(err, "parse config file")
+func parseConfigFromStdin() (*config.Config, error) {
+	cfg, err := config.Parse(os.Stdin)
+	if err != nil {
+		return nil, errorx.Errorf(err, "load config from stdin")
 	}
-
-	if config.URI == "" {
-		return nil, errors.New("empty uri")
-	}
-	return &config, nil
+	return cfg, nil
 }
 
-func parseConfigFile(cfgFile string) (*Config, error) {
+func parseConfigFile(cfgFile string) (*config.Config, error) {
 	logx.Debug("parse config", logx.S("path", cfgFile))
-	path, err := filepathx.NewPath(cfgFile)
+
+	cfg, err := func() (*config.Config, error) {
+		path, err := filepathx.NewPath(cfgFile)
+		if err != nil {
+			return nil, err
+		}
+		f, err := path.FilePath().Open()
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
+		return config.Parse(f)
+	}()
 	if err != nil {
 		return nil, errorx.Errorf(err, "load config file %s", cfgFile)
 	}
-	content, err := path.FilePath().Read()
-	if err != nil {
-		return nil, errorx.Errorf(err, "load config file %s", cfgFile)
-	}
-	return parseConfig(content)
+	return cfg, nil
 }
 
 func getPath(cmd *cobra.Command, name string) (filepathx.Path, error) {
@@ -139,13 +110,13 @@ func getPath(cmd *cobra.Command, name string) (filepathx.Path, error) {
 	return filepathx.NewPath(v)
 }
 
-func newEnv(config *Config) execx.Env {
-	env := execx.EnvFromMap(config.Env)
+func newEnv(cfg *config.Config) execx.Env {
+	env := execx.EnvFromMap(cfg.Env)
 	// set builtin envs
-	env.Set("IVG_URI", config.URI)
-	env.Set("IVG_BRANCH", config.Branch)
-	env.Set("IVG_LOCALD", config.LocalDir)
-	env.Set("IVG_LOCK", config.LockFile)
+	env.Set("IVG_URI", cfg.URI)
+	env.Set("IVG_BRANCH", cfg.Branch)
+	env.Set("IVG_LOCALD", cfg.LocalDir)
+	env.Set("IVG_LOCK", cfg.LockFile)
 	return env
 }
 
@@ -162,13 +133,13 @@ func setShellFlag(cmd *cobra.Command) {
 		"shell", []string{}, "Shell used to run scripts, separated by comma, e.g. arch,--arm64e,/bin/bash")
 }
 
-func getShell(cmd *cobra.Command, config *Config) []string {
+func getShell(cmd *cobra.Command, cfg *config.Config) []string {
 	shell, _ := cmd.Flags().GetStringSlice("shell")
 	if len(shell) > 0 {
 		return shell
 	}
-	if len(config.Shell) > 0 {
-		return config.Shell
+	if len(cfg.Shell) > 0 {
+		return cfg.Shell
 	}
 	return []string{"bash"}
 }
