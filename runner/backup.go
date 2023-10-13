@@ -61,7 +61,7 @@ func (b *LockFileBackup) Create() error {
 	if err != nil {
 		return errorx.Errorf(err, "create backup")
 	}
-	if err := backupFile.Move(); err != nil {
+	if err := backupFile.Copy(); err != nil {
 		return errorx.Errorf(err, "move backup")
 	}
 
@@ -73,6 +73,7 @@ func (b *LockFileBackup) Create() error {
 }
 
 func (b *LockFileBackup) Restore() error {
+	defer b.backupFile.Close()
 	return b.backupFile.Restore()
 }
 
@@ -96,7 +97,7 @@ func (b *RepoBackup) Create() error {
 	if err != nil {
 		return errorx.Errorf(err, "create backup")
 	}
-	if err := repoBackup.Rename(); err != nil {
+	if err := repoBackup.Copy(); err != nil {
 		return errorx.Errorf(err, "move backup")
 	}
 	b.backupDir = repoBackup
@@ -104,5 +105,6 @@ func (b *RepoBackup) Create() error {
 }
 
 func (b *RepoBackup) Restore() error {
+	defer b.backupDir.Close()
 	return b.backupDir.Restore()
 }
