@@ -126,16 +126,19 @@ func run(cmd *cobra.Command, _ []string) error {
 
 	shell := getShell(cmd, cfg)
 	logx.Info("start installation!", logx.SS("shell", shell))
+	argument := &runner.Argument{
+		Config:       cfg,
+		Env:          env,
+		Shell:        shell,
+		LocalRepoDir: gitWorkDir,
+	}
 	installErr := (&installRunner{
-		cfg:        cfg,
+		Argument:   argument,
 		workDir:    workDir.DirPath(),
-		gitWorkDir: gitWorkDir,
-		env:        env,
 		lockFile:   lockFile,
 		gitCommand: gitCommand,
 		fact:       fact,
 		noupdate:   noupdate,
-		shell:      shell,
 	}).run(cmd.Context())
 	if installErr != nil {
 		if err := backupList.Restore(); err != nil {
@@ -146,28 +149,25 @@ func run(cmd *cobra.Command, _ []string) error {
 }
 
 type installRunner struct {
-	cfg        *config.Config
+	*runner.Argument
 	workDir    filepathx.DirPath
-	gitWorkDir filepathx.DirPath
-	env        execx.Env
 	lockFile   filepathx.FilePath
 	gitCommand git.Command
 	fact       strategy.Fact
 	noupdate   bool
-	shell      []string
 }
 
 func (r *installRunner) run(ctx context.Context) error {
 	if err := r.workDir.Ensure(); err != nil {
 		return errorx.Errorf(err, "ensure workDir")
 	}
-	if err := r.gitWorkDir.Parent().DirPath().Ensure(); err != nil {
+	if err := r.LocalRepoDir.Parent().DirPath().Ensure(); err != nil {
 		return errorx.Errorf(err, "ensure git workDir")
 	}
 
 	logx.Info("setup")
-	if _, err := execx.NewExecutorFromStrings(r.cfg.Steps.Setup, r.shell...).
-		Execute(ctx, execx.WithEnv(r.env), execx.WithDir(r.workDir)); err != nil {
+	if _, err := execx.NewExecutorFromStrings(r.Config.Steps.Setup, r.Shell...).
+		Execute(ctx, execx.WithEnv(r.Env), execx.WithDir(r.workDir)); err != nil {
 		return errorx.Errorf(err, "setup")
 	}
 
@@ -179,16 +179,13 @@ func (r *installRunner) run(ctx context.Context) error {
 
 	logx.Info("run strategy", logx.S("type", r.fact.SelectStrategy().String()))
 	err := runner.NewStrategy(
+		r.Argument,
 		r.fact.SelectStrategy().Runner(strategy.NewRunnerConfig(
-			r.cfg.URI,
-			r.cfg.Branch,
+			r.Config.URI,
+			r.Config.Branch,
 			keeper.Locker().Pair(),
 			r.gitCommand,
 		)),
-		r.cfg,
-		r.gitWorkDir,
-		r.env,
-		r.shell,
 	).Run(ctx)
 
 	if err == nil {
@@ -203,13 +200,10 @@ func (r *installRunner) run(ctx context.Context) error {
 
 	// failed to run strategy
 	logx.Error("run strategy", logx.Err(err))
-	runner.NewRollback(
+	_ = runner.NewRollback(
+		r.Argument,
 		keeper,
 		r.noupdate,
-		r.cfg,
-		r.gitWorkDir,
-		r.env,
-		r.shell,
 	).Run(ctx)
 	return err
 }
