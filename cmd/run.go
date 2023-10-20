@@ -29,6 +29,7 @@ func init() {
 	runCmd.Flags().String("commit", "", "Fix commit hash")
 	runCmd.Flags().Bool("clean", false, "Remove lockfile and repo before installation")
 	runCmd.Flags().Bool("noupdate", false, "Ignore lock and no update repo, just run scripts")
+	runCmd.Flags().Bool("backupRepo", false, "Backup repo dir")
 	runCmd.MarkFlagsMutuallyExclusive("update", "retry", "clean", "noupdate")
 	rootCmd.AddCommand(runCmd)
 }
@@ -116,10 +117,13 @@ func run(cmd *cobra.Command, _ []string) error {
 	}
 
 	explicitCommit, _ := cmd.Flags().GetString("commit")
-	backupList := runner.NewBackupList(
+	backuperList := []runner.Backuper{
 		runner.NewLockFileBackup(lockFile, explicitCommit, clean),
-		runner.NewRepoBackup(gitWorkDir, clean),
-	)
+	}
+	if backupRepo, _ := cmd.Flags().GetBool("backupRepo"); backupRepo {
+		backuperList = append(backuperList, runner.NewRepoBackup(gitWorkDir, clean))
+	}
+	backupList := runner.NewBackupList(backuperList...)
 	if err := backupList.Create(); err != nil {
 		return errorx.Errorf(err, "create backup")
 	}
