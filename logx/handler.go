@@ -75,9 +75,10 @@ func (h *BlockHandler) Handle(_ context.Context, r slog.Record) error {
 			i++
 			return true
 		})
-		write("%s\n----------------------------------------",
-			strings.Join(ss, "\n"),
-		)
+		if len(ss) > 0 {
+			write("%s\n", strings.Join(ss, "\n"))
+		}
+		write("----------------------------------------")
 	}
 
 	write("\n")
