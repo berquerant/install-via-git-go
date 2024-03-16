@@ -30,7 +30,7 @@ vuln:
 	go run golang.org/x/vuln/cmd/govulncheck ./...
 
 DOCKER_RUN = docker run --rm -v "$(ROOT)":/usr/src/myapp -w /usr/src/myapp
-DOCKER_GO_IMAGE = golang:1.22
+DOCKER_GO_IMAGE = golang:1.21
 DOCKER_LINT_IMAGE = golangci/golangci-lint:v1.56.2
 
 .PHONY: docker-test
