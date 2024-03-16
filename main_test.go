@@ -38,10 +38,11 @@ func (r *testRunner) parseSkeleton(t *testing.T) {
 }
 
 type testRunnerArg struct {
-	branch    string
-	installed bool
-	commit    string
-	opt       []string
+	branch           string
+	installed        bool
+	commit           string
+	opt              []string
+	additionalConfig string
 }
 
 func (r *testRunner) installSelf(t *testing.T, arg *testRunnerArg) {
@@ -57,11 +58,13 @@ install:
   - ./ivgself help
   - ./ivgself skeleton > skull.yml
   - ./ivgself parse --config skull.yml
-  - rm -f %[3]s`
+  - rm -f %[3]s
+%[4]s`
 	config := fmt.Sprintf(configTemplate,
 		arg.branch,
 		lockFile,
 		installCheck.Name(),
+		arg.additionalConfig,
 	)
 	f, err := os.Create(configPath)
 	fail(t, err)
@@ -142,7 +145,7 @@ func TestEndToEnd(t *testing.T) {
 		}
 		runner.installSelf(t, arg)
 	})
-	t.Run("install self v0.9.0 noop", func(t *testing.T) {
+	t.Run("install self v0.9.0 noop because commit hash matched", func(t *testing.T) {
 		arg := &testRunnerArg{
 			branch:    "v0.9.0",
 			installed: false,
@@ -159,12 +162,44 @@ func TestEndToEnd(t *testing.T) {
 		}
 		runner.installSelf(t, arg)
 	})
+	t.Run("install self v0.9.0 retry cancel because check failed", func(t *testing.T) {
+		arg := &testRunnerArg{
+			branch:    "v0.9.0",
+			installed: false,
+			commit:    v0_8_0,
+			opt:       []string{"--retry"},
+			additionalConfig: `check:
+  - false`,
+		}
+		runner.installSelf(t, arg)
+	})
+	t.Run("install self v0.9.0 retry because check succeeded", func(t *testing.T) {
+		arg := &testRunnerArg{
+			branch:    "v0.9.0",
+			installed: true,
+			commit:    v0_8_0,
+			opt:       []string{"--retry"},
+			additionalConfig: `check:
+  - true`,
+		}
+		runner.installSelf(t, arg)
+	})
 	t.Run("install self v0.9.0 update", func(t *testing.T) {
 		arg := &testRunnerArg{
 			branch:    "v0.9.0",
 			installed: true,
 			commit:    v0_9_0,
 			opt:       []string{"--update"},
+		}
+		runner.installSelf(t, arg)
+	})
+	t.Run("install self main ignore update because check failed", func(t *testing.T) {
+		arg := &testRunnerArg{
+			branch:    "main",
+			installed: false,
+			opt:       []string{"--update"},
+			additionalConfig: `check:
+  - false`,
 		}
 		runner.installSelf(t, arg)
 	})

@@ -24,6 +24,7 @@ type (
 		Install  []string `yaml:"install,omitempty" json:"install,omitempty"`
 		Rollback []string `yaml:"rollback,omitempty" json:"rollback,omitempty"`
 		Skip     []string `yaml:"skip,omitempty" json:"skip,omitempty"`
+		Check    []string `yaml:"check,omitempty" json:"check,omitempty"`
 	}
 )
 

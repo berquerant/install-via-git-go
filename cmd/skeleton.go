@@ -22,12 +22,13 @@ const skeleton = `# install-via-git configuration.
 #
 # 1. check the lockfile, the local repo
 # 2. determine the update strategy
-# 3. execute setup
-# 4. manage the local repository
-# 5. execute skip and exit if no update required
-# 6. execute install
+# 3. execute check
+# 4. execute setup
+# 5. manage the local repository
+# 6. execute skip and exit if no update required
+# 7. execute install
 #
-# If an error occurs after 4, rollback the lockfile, the local repo, execute rollback and exit.
+# If an error occurs after 5, rollback the lockfile, the local repo, execute rollback and exit.
 # The update strategies are below:
 #
 # - Tunknown: no proper strategy.
@@ -64,7 +65,7 @@ lock: lockfile
 shell:
   - /bin/bash
 # environment variables (optional).
-# setup, install, rollback, skip can refer the following variables:
+# check, setup, install, rollback, skip can refer the following variables:
 # - IVG_URI=value of repository
 # - IVG_BRANCH=value of branch
 # - IVG_LOCALD=value of locald
@@ -73,7 +74,11 @@ shell:
 # - IVG_WORKD=absolute path of workDir
 env:
   MY_NAME: myname
-# setup is always run first in workDir (optional)
+# check will always run in workDir (optional)
+# cancel installation when returning a failure exit status
+check:
+  - echo "Start check"
+# setup will always run in workDir (optional)
 setup:
   - echo "Start setup"
 # install will run when installation is required in workDir/locald (optional)

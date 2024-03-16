@@ -169,6 +169,13 @@ func (r *installRunner) run(ctx context.Context) error {
 		return errorx.Errorf(err, "ensure git workDir")
 	}
 
+	logx.Info("check")
+	if _, err := execx.NewExecutorFromStrings(r.Config.Steps.Check, r.Shell...).
+		Execute(ctx, execx.WithEnv(r.Env), execx.WithDir(r.workDir)); err != nil {
+		logx.Info("cancel installation because check failed", logx.Err(err))
+		return nil
+	}
+
 	logx.Info("setup")
 	if _, err := execx.NewExecutorFromStrings(r.Config.Steps.Setup, r.Shell...).
 		Execute(ctx, execx.WithEnv(r.Env), execx.WithDir(r.workDir)); err != nil {
