@@ -18,7 +18,7 @@ var parseCmd = &cobra.Command{
 	Use:   "parse",
 	Short: "Parse config file",
 	Long:  `Parse config file.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		config, err := parseConfigFromFlag(cmd)
 		if err != nil {
 			return err

@@ -11,7 +11,7 @@ func init() {
 var skeletonCmd = &cobra.Command{
 	Use:   "skeleton",
 	Short: "Generate config skeleton",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		cmd.Println(skeleton)
 	},
 }
