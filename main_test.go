@@ -37,9 +37,16 @@ func (r *testRunner) parseSkeleton(t *testing.T) {
 	fail(t, parseCmd.Wait())
 }
 
-func (r *testRunner) installSelf(t *testing.T, branch string, installed bool, commit string, opt ...string) {
+type testRunnerArg struct {
+	branch    string
+	installed bool
+	commit    string
+	opt       []string
+}
+
+func (r *testRunner) installSelf(t *testing.T, arg *testRunnerArg) {
 	installCheck, err := os.CreateTemp(r.based, "install_check")
-	lockFile := ".lock"
+	const lockFile = ".lock"
 	fail(t, err)
 	configPath := filepath.Join(r.based, "self.yml")
 	const configTemplate = `uri: https://github.com/berquerant/install-via-git-go.git
@@ -52,7 +59,7 @@ install:
   - ./ivgself parse --config skull.yml
   - rm -f %[3]s`
 	config := fmt.Sprintf(configTemplate,
-		branch,
+		arg.branch,
 		lockFile,
 		installCheck.Name(),
 	)
@@ -65,15 +72,15 @@ install:
 	fail(t, err)
 
 	workDir := filepath.Join(r.based, "work")
-	assert.Nil(t, run(r.ivg, append([]string{"run", "--config", configPath, "--workDir", workDir}, opt...)...))
+	assert.Nil(t, run(r.ivg, append([]string{"run", "--config", configPath, "--workDir", workDir}, arg.opt...)...))
 
-	if installed {
+	if arg.installed {
 		assert.NoFileExists(t, installCheck.Name())
 	} else {
 		assert.FileExists(t, installCheck.Name())
 	}
 
-	if commit == "" {
+	if arg.commit == "" {
 		t.Log("skip check commit")
 		return
 	}
@@ -83,7 +90,7 @@ install:
 	defer lock.Close()
 	gotCommit, err := io.ReadAll(lock)
 	fail(t, err)
-	assert.Equal(t, commit, string(gotCommit))
+	assert.Equal(t, arg.commit, string(gotCommit))
 }
 
 func TestEndToEnd(t *testing.T) {
@@ -128,19 +135,46 @@ func TestEndToEnd(t *testing.T) {
 
 	t.Run("parse from stdin", runner.parseSkeleton)
 	t.Run("install self v0.8.0", func(t *testing.T) {
-		runner.installSelf(t, "v0.8.0", true, v0_8_0)
+		arg := &testRunnerArg{
+			branch:    "v0.8.0",
+			installed: true,
+			commit:    v0_8_0,
+		}
+		runner.installSelf(t, arg)
 	})
 	t.Run("install self v0.9.0 noop", func(t *testing.T) {
-		runner.installSelf(t, "v0.9.0", false, v0_8_0)
+		arg := &testRunnerArg{
+			branch:    "v0.9.0",
+			installed: false,
+			commit:    v0_8_0,
+		}
+		runner.installSelf(t, arg)
 	})
 	t.Run("install self v0.9.0 retry", func(t *testing.T) {
-		runner.installSelf(t, "v0.9.0", true, v0_8_0, "--retry")
+		arg := &testRunnerArg{
+			branch:    "v0.9.0",
+			installed: true,
+			commit:    v0_8_0,
+			opt:       []string{"--retry"},
+		}
+		runner.installSelf(t, arg)
 	})
 	t.Run("install self v0.9.0 update", func(t *testing.T) {
-		runner.installSelf(t, "v0.9.0", true, v0_9_0, "--update")
+		arg := &testRunnerArg{
+			branch:    "v0.9.0",
+			installed: true,
+			commit:    v0_9_0,
+			opt:       []string{"--update"},
+		}
+		runner.installSelf(t, arg)
 	})
 	t.Run("install self main update", func(t *testing.T) {
-		runner.installSelf(t, "main", true, "", "--update")
+		arg := &testRunnerArg{
+			branch:    "main",
+			installed: true,
+			opt:       []string{"--update"},
+		}
+		runner.installSelf(t, arg)
 	})
 }
 
