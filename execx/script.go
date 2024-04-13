@@ -2,9 +2,10 @@ package execx
 
 import (
 	"berquerant/install-via-git-go/filepathx"
+	"berquerant/install-via-git-go/logx"
 	"context"
-	"io"
-	"os"
+
+	ex "github.com/berquerant/execx"
 )
 
 func NewRawScript(content string, shell ...string) *RawScript {
@@ -19,41 +20,29 @@ type RawScript struct {
 	shell   []string
 }
 
-func (s *RawScript) Execute(ctx context.Context, opt ...ConfigOption) (result Result, retErr error) {
+func (s *RawScript) Execute(ctx context.Context, opt ...ConfigOption) (Result, error) {
 	config := NewConfigBuilder().Dir(filepathx.PWD()).Env(NewEnv()).Build()
 	config.Apply(opt...)
 
-	f, err := os.CreateTemp("", "install_via_git_execx")
-	if err != nil {
-		retErr = err
-		return
-	}
-	defer func() {
-		_ = os.Remove(f.Name())
-	}()
+	script := ex.NewScript(s.content, s.shell[0], s.shell[1:]...)
+	script.Env.Merge(ex.EnvFromEnviron())
+	script.Env.Merge(config.Env.Get())
 
 	var (
-		env      = config.Env.Get().Add(EnvFromEnviron())
-		expanded = env.Expand(s.content)
+		result Result
+		err    error
 	)
+	err = script.Runner(func(cmd *ex.Cmd) error {
+		logx.Debug("exec script")
+		logx.DebugRaw(s.content)
 
-	if _, err := io.WriteString(f, expanded); err != nil {
-		retErr = err
-		return
-	}
-	if err := os.Chmod(f.Name(), 0755); err != nil {
-		retErr = err
-		return
-	}
-
-	p, _ := filepathx.NewPath(f.Name())
-	result, retErr = NewScript(p.FilePath(), s.shell...).Execute(ctx, opt...)
-	return
-}
-
-// NewScript returns a new Command that executes the script.
-func NewScript(path filepathx.FilePath, shell ...string) *Command {
-	return &Command{
-		args: append(shell, path.String()),
-	}
+		cmd.Dir = config.Dir.Get().String()
+		r, err := run(ctx, cmd)
+		if err != nil {
+			return err
+		}
+		result = r
+		return nil
+	})
+	return result, err
 }
