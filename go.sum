@@ -2,6 +2,8 @@ github.com/berquerant/execx v0.0.0-20240413045325-ad96893f97d3 h1:IsUi3a+neQO98I
 github.com/berquerant/execx v0.0.0-20240413045325-ad96893f97d3/go.mod h1:hH8WKmZYJwpPfPaVSgLFPWgtd3pVCbbPDaXx9aHnmh8=
 github.com/berquerant/execx v0.1.0 h1:f30mmWvV3T8k5qQ4UXgNhTPWmAOQXR1z6waqbuy1Tmo=
 github.com/berquerant/execx v0.1.0/go.mod h1:hH8WKmZYJwpPfPaVSgLFPWgtd3pVCbbPDaXx9aHnmh8=
+github.com/berquerant/execx v0.1.1 h1:7+8X5E4BFjFnpVJQKfJUc0cQP/0n7Zx4xs8wKZe1exk=
+github.com/berquerant/execx v0.1.1/go.mod h1:hH8WKmZYJwpPfPaVSgLFPWgtd3pVCbbPDaXx9aHnmh8=
 github.com/cpuguy83/go-md2man/v2 v2.0.3/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
