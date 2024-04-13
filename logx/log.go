@@ -43,6 +43,12 @@ func Raw(msg string) {
 	get().Raw(msg)
 }
 
+func DebugRaw(msg string) {
+	if enableDebug {
+		get().Raw(msg)
+	}
+}
+
 func Sync() error {
 	return get().Sync()
 }
