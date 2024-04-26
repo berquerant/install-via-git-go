@@ -8,7 +8,6 @@ import (
 	"io"
 	"strings"
 
-	"github.com/berquerant/execx"
 	ex "github.com/berquerant/execx"
 )
 
@@ -79,7 +78,7 @@ func run(ctx context.Context, cmd *ex.Cmd) (result Result, retErr error) {
 		logx.Info("exec end", logx.Err(retErr))
 	}()
 
-	consumer := func(x execx.Token) {
+	consumer := func(x ex.Token) {
 		logx.Raw(x.String())
 	}
 	r, err := cmd.Run(
