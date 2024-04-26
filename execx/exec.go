@@ -78,10 +78,13 @@ func run(ctx context.Context, cmd *ex.Cmd) (result Result, retErr error) {
 		logx.Info("exec end", logx.Err(retErr))
 	}()
 
+	consumer := func(x ex.Token) {
+		logx.Raw(x.String())
+	}
 	r, err := cmd.Run(
 		ctx,
-		ex.WithStdoutConsumer(logx.Raw),
-		ex.WithStderrConsumer(logx.Raw),
+		ex.WithStdoutConsumer(consumer),
+		ex.WithStderrConsumer(consumer),
 	)
 	if err != nil {
 		retErr = errorx.Errorf(err, "exec command")
