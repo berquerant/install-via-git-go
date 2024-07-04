@@ -18,6 +18,8 @@ type Keeper interface {
 	Commit() error
 	// Rollback writes current hash.
 	Rollback() error
+	// Clear overwrites with empty.
+	Clear() error
 }
 
 func NewFileKeeper(path filepathx.FilePath) *FileKeeper {
@@ -43,6 +45,14 @@ type FileKeeper struct {
 
 func (f *FileKeeper) Pair() *Pair {
 	return &f.pair
+}
+
+func (f *FileKeeper) Clear() error {
+	logx.Debug("keeper clear")
+	if err := f.path.Write(""); err != nil {
+		return errorx.Errorf(err, "clear %s", f.path)
+	}
+	return nil
 }
 
 func (f *FileKeeper) Commit() error {

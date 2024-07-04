@@ -256,3 +256,17 @@ type UnknownRunner struct{}
 func (*UnknownRunner) Run(_ context.Context) error {
 	return ErrUnknownStrategy
 }
+
+func NewRemoveRunner(c RunnerConfig) *RemoveRunner {
+	return &RemoveRunner{
+		c: c,
+	}
+}
+
+type RemoveRunner struct {
+	c RunnerConfig
+}
+
+func (r *RemoveRunner) Run(_ context.Context) error {
+	return r.c.Command().CLI().Dir().Remove()
+}

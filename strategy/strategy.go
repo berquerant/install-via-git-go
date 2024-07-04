@@ -44,6 +44,10 @@ const (
 	USretry
 	// USnoupdate means that continues processing without repository updates.
 	USnoupdate
+	// USuninstall means that executes uninstall.
+	USuninstall
+	// USremove means that executes uninstall and remove the repository.
+	USremove
 )
 
 //go:generate go run golang.org/x/tools/cmd/stringer@latest -type=Type -output type_stringer_generated.go
@@ -72,6 +76,8 @@ const (
 	Tretry
 	// Tnoupdate does nothing but continues processing.
 	Tnoupdate
+	// Tremove removes the repo.
+	Tremove
 )
 
 func NewFact(re RepoExistence, le LockExistence, rs RepoStatus, us UpdateSpec) Fact {
@@ -91,9 +97,15 @@ type Fact struct {
 }
 
 func (f Fact) SelectStrategy() Type {
-	if f.USpec == USnoupdate {
+	switch f.USpec {
+	case USnoupdate:
 		return Tnoupdate
+	case USremove:
+		return Tremove
+	case USuninstall:
+		return Tnoop
 	}
+
 	switch f.RExist {
 	case REnone:
 		switch f.LExist {
@@ -168,6 +180,8 @@ func (t Type) Runner(c RunnerConfig) Runner {
 		return NewRetryRunner()
 	case Tnoupdate:
 		return NewNoUpdateRunner()
+	case Tremove:
+		return NewRemoveRunner(c)
 	default:
 		return NewUnknownRunner()
 	}

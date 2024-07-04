@@ -82,11 +82,16 @@ func run(cmd *cobra.Command, _ []string) error {
 	dry, _ := cmd.Flags().GetBool("dry")
 	update, _ := cmd.Flags().GetBool("update")
 	retry, _ := cmd.Flags().GetBool("retry")
+	ius := &inspect.UpdateSpec{
+		Update:   update,
+		Retry:    retry,
+		NoUpdate: noupdate,
+	}
 	fact := strategy.NewFact(
 		inspect.RepoExistence(cmd.Context(), gitCommand),
 		inspect.LockExistence(lockFile),
 		inspect.RepoStatus(cmd.Context(), gitCommand, lockFile),
-		inspect.UpdateSpec(update, retry, noupdate),
+		ius.Get(),
 	)
 	// check hashes
 	{

@@ -19,11 +19,12 @@ func _() {
 	_ = x[Tnoop-8]
 	_ = x[Tretry-9]
 	_ = x[Tnoupdate-10]
+	_ = x[Tremove-11]
 }
 
-const _Type_name = "TunknownTinitFromEmptyTinitFromEmptyToLockTinitFromEmptyToLatestTcreateLockTcreateLatestLockTupdateToLockTupdateToLatestWithLockTnoopTretryTnoupdate"
+const _Type_name = "TunknownTinitFromEmptyTinitFromEmptyToLockTinitFromEmptyToLatestTcreateLockTcreateLatestLockTupdateToLockTupdateToLatestWithLockTnoopTretryTnoupdateTremove"
 
-var _Type_index = [...]uint8{0, 8, 22, 42, 64, 75, 92, 105, 128, 133, 139, 148}
+var _Type_index = [...]uint8{0, 8, 22, 42, 64, 75, 92, 105, 128, 133, 139, 148, 155}
 
 func (i Type) String() string {
 	if i < 0 || i >= Type(len(_Type_index)-1) {

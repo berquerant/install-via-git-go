@@ -166,5 +166,27 @@ func TestFact(t *testing.T) {
 			),
 		)
 
+		t.Run(
+			"uninstall",
+			testFact(
+				strategy.Tnoop,
+				allRepoExistence,
+				allLockExistence,
+				allRepoStatus,
+				[]strategy.UpdateSpec{strategy.USuninstall},
+			),
+		)
+
+		t.Run(
+			"remove",
+			testFact(
+				strategy.Tremove,
+				allRepoExistence,
+				allLockExistence,
+				allRepoStatus,
+				[]strategy.UpdateSpec{strategy.USremove},
+			),
+		)
+
 	})
 }

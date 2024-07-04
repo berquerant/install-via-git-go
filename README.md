@@ -13,6 +13,7 @@ Available Commands:
   parse       Parse config file
   run         Run installation
   skeleton    Generate config skeleton
+  uninstall   Run uninstallation
 
 Flags:
       --debug   Enable debug logs
@@ -21,13 +22,15 @@ Flags:
 Use "install-via-git [command] --help" for more information about a command.
 ```
 
+## Configuration
+
 ```
 ❯ install-via-git skeleton
 # install-via-git configuration.
 #
 # install-via-git executes the process in the following order.
 #
-# 1. check the lockfile, the local repo
+# 1. check the lockfile, the local repository
 # 2. determine the update strategy
 # 3. execute check
 # 4. execute setup
@@ -35,7 +38,14 @@ Use "install-via-git [command] --help" for more information about a command.
 # 6. execute skip and exit if no update required
 # 7. execute install
 #
-# If an error occurs after 5, rollback the lockfile, the local repo, execute rollback and exit.
+# If an error occurs after 5, rollback the lockfile, the local repository, execute rollback and exit.
+#
+# uninstall subcommand executes the following instead.
+#
+# 1. execute uninstall
+# 2. remove the local repository if --remove or --purge flag is specified
+# 3. clear the lockfile if --purge flag is specified
+#
 # The update strategies are below:
 #
 # - Tunknown: no proper strategy.
@@ -49,6 +59,8 @@ Use "install-via-git [command] --help" for more information about a command.
 # - Tnoop: no operation for repo, no update required
 # - Tretry: no operation for repo, but continue installation
 # - Tnoupdate: no operation for repo and lock, but continue installation
+# - Tuninstall: run uninstall
+# - Tremove: run uninstall, remove repo
 #
 # The strategy depends on the following factors:
 # - local repo existence
@@ -56,6 +68,9 @@ Use "install-via-git [command] --help" for more information about a command.
 # - lock and repo status
 # - "update" cli option
 # - "retry" cli option
+# - "uninstall" cli subcommand
+# - "remove" cli option
+# - "purge" cli option
 #
 # repository uri
 uri: https://github.com/some/toolname.git
@@ -97,4 +112,7 @@ rollback:
 # skip will run when no update is required in workDir/locald (optional)
 skip:
   - echo "Start skip"
+# uninstall will run by uninstall subcommand (optional)
+uninstall:
+  - echo "Start uninstall"
 ```

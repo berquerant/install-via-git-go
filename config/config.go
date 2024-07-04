@@ -20,11 +20,12 @@ type (
 	}
 
 	Steps struct {
-		Setup    []string `yaml:"setup,omitempty" json:"setup,omitempty"`
-		Install  []string `yaml:"install,omitempty" json:"install,omitempty"`
-		Rollback []string `yaml:"rollback,omitempty" json:"rollback,omitempty"`
-		Skip     []string `yaml:"skip,omitempty" json:"skip,omitempty"`
-		Check    []string `yaml:"check,omitempty" json:"check,omitempty"`
+		Setup     []string `yaml:"setup,omitempty" json:"setup,omitempty"`
+		Install   []string `yaml:"install,omitempty" json:"install,omitempty"`
+		Rollback  []string `yaml:"rollback,omitempty" json:"rollback,omitempty"`
+		Skip      []string `yaml:"skip,omitempty" json:"skip,omitempty"`
+		Check     []string `yaml:"check,omitempty" json:"check,omitempty"`
+		Uninstall []string `yaml:"uninstall,omitempty" json:"uninstall,omitempty"`
 	}
 )
 

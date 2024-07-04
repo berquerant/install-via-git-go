@@ -12,11 +12,13 @@ func _() {
 	_ = x[USforce-1]
 	_ = x[USretry-2]
 	_ = x[USnoupdate-3]
+	_ = x[USuninstall-4]
+	_ = x[USremove-5]
 }
 
-const _UpdateSpec_name = "USunspecUSforceUSretryUSnoupdate"
+const _UpdateSpec_name = "USunspecUSforceUSretryUSnoupdateUSuninstallUSremove"
 
-var _UpdateSpec_index = [...]uint8{0, 8, 15, 22, 32}
+var _UpdateSpec_index = [...]uint8{0, 8, 15, 22, 32, 43, 51}
 
 func (i UpdateSpec) String() string {
 	if i < 0 || i >= UpdateSpec(len(_UpdateSpec_index)-1) {

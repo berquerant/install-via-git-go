@@ -69,4 +69,19 @@ func TestFileKeeper(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("Clear", func(t *testing.T) {
+		path := p.Join("clear").FilePath()
+		assert.Nil(t, path.Ensure())
+		defer path.Remove()
+		assert.Nil(t, path.Write("init"))
+
+		k := lock.NewFileKeeper(path)
+		assert.Equal(t, "init", k.Pair().Current)
+		assert.Nil(t, k.Clear())
+
+		got, err := path.Read()
+		assert.Nil(t, err)
+		assert.Equal(t, "", got)
+	})
 }

@@ -25,14 +25,26 @@ func RepoStatus(ctx context.Context, command git.Command, lockFile filepathx.Fil
 	return strategy.RSconflict
 }
 
-func UpdateSpec(update, retry, noupdate bool) strategy.UpdateSpec {
+type UpdateSpec struct {
+	Update    bool
+	Retry     bool
+	NoUpdate  bool
+	Remove    bool
+	Uninstall bool
+}
+
+func (us UpdateSpec) Get() strategy.UpdateSpec {
 	switch {
-	case noupdate:
+	case us.NoUpdate:
 		return strategy.USnoupdate
-	case retry:
+	case us.Retry:
 		return strategy.USretry
-	case update:
+	case us.Update:
 		return strategy.USforce
+	case us.Remove:
+		return strategy.USremove
+	case us.Uninstall:
+		return strategy.USuninstall
 	default:
 		return strategy.USunspec
 	}

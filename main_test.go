@@ -37,6 +37,72 @@ func (r *testRunner) parseSkeleton(t *testing.T) {
 	fail(t, parseCmd.Wait())
 }
 
+type testUninstallArg struct {
+	opt         []string
+	repoRemoved bool
+	lockCleared bool
+}
+
+func (r *testRunner) uninstall(t *testing.T, arg *testUninstallArg) {
+	installCheck, err := os.CreateTemp(r.based, "install_check")
+	fail(t, err)
+	uninstallCheck, err := os.CreateTemp(r.based, "uninstall_check")
+	fail(t, err)
+	configPath := filepath.Join(r.based, "uninstall.yml")
+	const locald = "uninstall_repo"
+	const lockFile = ".uninstall_lock"
+	const configTemplate = `uri: https://github.com/berquerant/install-via-git-go.git
+branch: v0.8.0
+locald: %[1]s
+lock: %[2]s
+install:
+  - rm -f %[3]s
+uninstall:
+  - rm -f %[4]s`
+
+	config := fmt.Sprintf(configTemplate,
+		locald,
+		lockFile,
+		installCheck.Name(),
+		uninstallCheck.Name(),
+	)
+	f, err := os.Create(configPath)
+	fail(t, err)
+	defer func() {
+		fail(t, f.Close())
+	}()
+	_, err = f.Write([]byte(config))
+	fail(t, err)
+
+	workDir := filepath.Join(r.based, "uninstall_work")
+	assert.Nil(t, run(r.ivg, "run", "--config", configPath, "--workDir", workDir, "--retry"))
+	// ensure installed
+	assert.NoFileExists(t, installCheck.Name())
+	repoDir := filepath.Join(workDir, locald)
+	lockPath := filepath.Join(workDir, lockFile)
+	assert.DirExists(t, repoDir)
+	assert.FileExists(t, lockPath)
+
+	assert.Nil(t, run(r.ivg, append([]string{"uninstall", "--config", configPath, "--workDir", workDir}, arg.opt...)...))
+	assert.NoFileExists(t, uninstallCheck.Name())
+	if arg.repoRemoved {
+		assert.NoDirExists(t, repoDir)
+	} else {
+		assert.DirExists(t, repoDir)
+	}
+
+	lock, err := os.Open(lockPath)
+	fail(t, err)
+	defer lock.Close()
+	gotCommit, err := io.ReadAll(lock)
+	fail(t, err)
+	if arg.lockCleared {
+		assert.Equal(t, "", string(gotCommit))
+	} else {
+		assert.NotEqual(t, "", string(gotCommit))
+	}
+}
+
 type testRunnerArg struct {
 	branch           string
 	installed        bool
@@ -210,6 +276,26 @@ func TestEndToEnd(t *testing.T) {
 			opt:       []string{"--update"},
 		}
 		runner.installSelf(t, arg)
+	})
+
+	t.Run("uninstall", func(t *testing.T) {
+		arg := &testUninstallArg{}
+		runner.uninstall(t, arg)
+	})
+	t.Run("uninstall and remove", func(t *testing.T) {
+		arg := &testUninstallArg{
+			opt:         []string{"--remove"},
+			repoRemoved: true,
+		}
+		runner.uninstall(t, arg)
+	})
+	t.Run("uninstall and purge", func(t *testing.T) {
+		arg := &testUninstallArg{
+			opt:         []string{"--purge"},
+			repoRemoved: true,
+			lockCleared: true,
+		}
+		runner.uninstall(t, arg)
 	})
 }
 

@@ -63,6 +63,7 @@ type Command interface {
 	Checkout(ctx context.Context, commit string) error
 	ResetHard(ctx context.Context, commit string) error
 	PullForce(ctx context.Context, repo string) error
+	CLI() CLI
 }
 
 func NewCommand(cli CLI) *CommandImpl {
@@ -73,6 +74,10 @@ func NewCommand(cli CLI) *CommandImpl {
 
 type CommandImpl struct {
 	cli CLI
+}
+
+func (c CommandImpl) CLI() CLI {
+	return c.cli
 }
 
 func (c CommandImpl) GetCommitHash(ctx context.Context) (string, error) {
