@@ -59,8 +59,7 @@ Use "install-via-git [command] --help" for more information about a command.
 # - Tnoop: no operation for repo, no update required
 # - Tretry: no operation for repo, but continue installation
 # - Tnoupdate: no operation for repo and lock, but continue installation
-# - Tuninstall: run uninstall
-# - Tremove: run uninstall, remove repo
+# - Tremove: remove repo
 #
 # The strategy depends on the following factors:
 # - local repo existence
