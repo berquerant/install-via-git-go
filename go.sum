@@ -1,5 +1,7 @@
-github.com/berquerant/execx v0.6.1 h1:7JIz0+5xoH+rrIS2gUUBnHhEQO0D/GsyUI+fV6KAFmo=
-github.com/berquerant/execx v0.6.1/go.mod h1:svWBwuRYDyD2atFzNhXL7cqEqb1TzGAB7i/Y1IgJeJI=
+github.com/berquerant/execx v0.6.2 h1:ZcKLSThjWycVTJDLt8YenM7yv8rv7CLsg9T6cz0upgw=
+github.com/berquerant/execx v0.6.2/go.mod h1:/OoEEuwzm3+QnRLw973+LMWbAWEe+6xxXrvDoytS0CQ=
+github.com/berquerant/goconfig v0.3.0 h1:ZE06HPp8aoXcdaNBWr3YsnMokfl5BBV4J0OHha5E8E0=
+github.com/berquerant/goconfig v0.3.0/go.mod h1:4fY4lQ98iRSU8Rn4huI7334mlVS46rAHjrAVfonzGzs=
 github.com/cpuguy83/go-md2man/v2 v2.0.4/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -24,8 +26,8 @@ golang.org/x/exp v0.0.0-20231006140011-7918f672742d h1:jtJma62tbqLibJ5sFQz8bKtEM
 golang.org/x/exp v0.0.0-20231006140011-7918f672742d/go.mod h1:ldy0pHrwJyGW56pPQzzkH36rKxoZW1tw7ZJpeKx+hdo=
 golang.org/x/mod v0.19.0 h1:fEdghXQSo20giMthA7cd28ZC+jts4amQ3YMXiP5oMQ8=
 golang.org/x/mod v0.19.0/go.mod h1:hTbmBsO62+eylJbnUtE2MGJUyE7QWk4xUqPFrRgJ+7c=
-golang.org/x/sync v0.7.0 h1:YsImfSBoP9QPYL0xyKJPq0gcaJdG3rInoqxTWbfQu9M=
-golang.org/x/sync v0.7.0/go.mod h1:Czt+wKu1gCyEFDUtn0jG5QVvpJ6rzVqr5aXyt9drQfk=
+golang.org/x/sync v0.9.0 h1:fEo0HyrW1GIgZdpbhCRO0PkJajUS5H9IFUztCgEo2jQ=
+golang.org/x/sync v0.9.0/go.mod h1:Czt+wKu1gCyEFDUtn0jG5QVvpJ6rzVqr5aXyt9drQfk=
 golang.org/x/sys v0.22.0 h1:RI27ohtqKCnwULzJLqkv897zojh5/DwS/ENaMzUOaWI=
 golang.org/x/sys v0.22.0/go.mod h1:/VUhepiaJMQUp4+oa/7Zr1D23ma6VTLIYjOOTFZPUcA=
 golang.org/x/telemetry v0.0.0-20240704191351-af73eac657e1 h1:BsQ49iG0DV5gj1qo45N0EjsbN62m02CHvfgHMjb7HCI=
