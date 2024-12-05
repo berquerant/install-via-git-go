@@ -32,6 +32,7 @@ func (r *UpdateToLatestWithLock) Run(ctx context.Context) error {
 	if current == "" {
 		return ErrNoLock
 	}
+	_ = r.c.Command().Checkout(ctx, r.c.Branch())
 	if err := r.c.Command().PullForce(ctx, r.c.Branch()); err != nil {
 		return err
 	}
@@ -62,6 +63,7 @@ func (r *UpdateToLockRunner) Run(ctx context.Context) error {
 	if current == "" {
 		return ErrNoLock
 	}
+	_ = r.c.Command().Checkout(ctx, r.c.Branch())
 	if err := r.c.Command().PullForce(ctx, r.c.Branch()); err != nil {
 		return err
 	}
@@ -94,6 +96,7 @@ func (r *CreateLatestLockRunner) Run(ctx context.Context) error {
 	}
 	r.c.Pair().Current = current
 
+	_ = r.c.Command().Checkout(ctx, r.c.Branch())
 	if err := r.c.Command().PullForce(ctx, r.c.Branch()); err != nil {
 		return err
 	}
@@ -120,6 +123,7 @@ type CreateLockRunner struct {
 }
 
 func (r *CreateLockRunner) Run(ctx context.Context) error {
+	_ = r.c.Command().Checkout(ctx, r.c.Branch())
 	if err := r.c.Command().PullForce(ctx, r.c.Branch()); err != nil {
 		return err
 	}
