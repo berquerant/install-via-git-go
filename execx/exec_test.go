@@ -29,13 +29,13 @@ func TestExecute(t *testing.T) {
 			{
 				title:  "echo",
 				args:   []string{"echo", "me"},
-				stdout: "me",
+				stdout: "me\n",
 			},
 			{
 				title:  "echo env",
 				env:    execx.EnvFromSlice([]string{"nternationalizatio=18"}),
 				args:   []string{"echo", "i${nternationalizatio}n"},
-				stdout: "i18n",
+				stdout: "i18n\n",
 			},
 		} {
 			tc := tc
@@ -56,7 +56,7 @@ func TestExecute(t *testing.T) {
 			"echo two",
 		}, "bash").Execute(context.TODO())
 		assert.Nil(t, err)
-		assert.Equal(t, "one\ntwo", r.Stdout)
+		assert.Equal(t, "one\ntwo\n", r.Stdout)
 	})
 
 	t.Run("script from strings failfast", func(t *testing.T) {
@@ -96,20 +96,20 @@ func TestExecute(t *testing.T) {
 				title: "stderr",
 				script: `echo out
 echo err >&2`,
-				stdout: "out",
-				stderr: "err",
+				stdout: "out\n",
+				stderr: "err\n",
 			},
 			{
 				title:  "env",
 				env:    execx.EnvFromSlice([]string{"nternationalizatio=18"}),
 				script: `echo i${nternationalizatio}n >&2`,
-				stderr: "i18n",
+				stderr: "i18n\n",
 			},
 			{
 				title:  "refer env from env",
 				env:    execx.EnvFromSlice([]string{"A=100", "B=$A/200"}),
 				script: `echo $B`,
-				stdout: "100/200",
+				stdout: "100/200\n",
 			},
 		} {
 			tc := tc
