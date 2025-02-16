@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-//go:generate go run github.com/berquerant/goconfig@v0.3.0 -field "Rename bool" -option -output backup_config_generated.go
+//go:generate go tool goconfig -field "Rename bool" -option -output backup_config_generated.go
 
 type Maker interface {
 	// Copy copies origin to backup.

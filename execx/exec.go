@@ -11,7 +11,7 @@ import (
 	ex "github.com/berquerant/execx"
 )
 
-//go:generate go run github.com/berquerant/goconfig@v0.3.0 -field "Dir filepathx.DirPath|Env Env" -option -output exec_config_generated.go
+//go:generate go tool goconfig -field "Dir filepathx.DirPath|Env Env" -option -output exec_config_generated.go
 
 // Executor is a shell command executor.
 type Executor interface {

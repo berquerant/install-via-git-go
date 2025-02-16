@@ -9,7 +9,7 @@ type Runner interface {
 	Run(ctx context.Context) error
 }
 
-//go:generate go run github.com/berquerant/dataclass@v0.3.0 -type "RunnerConfig" -field "Repo string|Branch string|Pair *lock.Pair|Command git.Command" -output run_dataclass_generated.go
+//go:generate go tool dataclass -type "RunnerConfig" -field "Repo string|Branch string|Pair *lock.Pair|Command git.Command" -output run_dataclass_generated.go
 
 var (
 	ErrNoopStrategy    = errors.New("NoopStrategy")

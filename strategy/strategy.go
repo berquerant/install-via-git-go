@@ -1,9 +1,9 @@
 package strategy
 
-//go:generate go run golang.org/x/tools/cmd/stringer@latest -type=RepoExistence -output repoexistence_stringer_generated.go
-//go:generate go run golang.org/x/tools/cmd/stringer@latest -type=LockExistence -output lockexistence_stringer_generated.go
-//go:generate go run golang.org/x/tools/cmd/stringer@latest -type=RepoStatus -output repostatus_stringer_generated.go
-//go:generate go run golang.org/x/tools/cmd/stringer@latest -type=UpdateSpec -output updatespec_stringer_generated.go
+//go:generate go tool stringer -type=RepoExistence -output repoexistence_stringer_generated.go
+//go:generate go tool stringer -type=LockExistence -output lockexistence_stringer_generated.go
+//go:generate go tool stringer -type=RepoStatus -output repostatus_stringer_generated.go
+//go:generate go tool stringer -type=UpdateSpec -output updatespec_stringer_generated.go
 
 type (
 	RepoExistence int
@@ -50,7 +50,7 @@ const (
 	USremove
 )
 
-//go:generate go run golang.org/x/tools/cmd/stringer@latest -type=Type -output type_stringer_generated.go
+//go:generate go tool stringer -type=Type -output type_stringer_generated.go
 
 type Type int
 
