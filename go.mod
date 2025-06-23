@@ -3,7 +3,7 @@ module berquerant/install-via-git-go
 go 1.24.4
 
 require (
-	github.com/berquerant/execx v0.11.0
+	github.com/berquerant/execx v0.11.1
 	github.com/goccy/go-yaml v1.18.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
@@ -61,7 +61,7 @@ require (
 	golang.org/x/crypto v0.33.0 // indirect
 	golang.org/x/mod v0.23.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
-	golang.org/x/sync v0.11.0 // indirect
+	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/telemetry v0.0.0-20240704191351-af73eac657e1 // indirect
 	golang.org/x/term v0.29.0 // indirect
