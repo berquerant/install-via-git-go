@@ -20,11 +20,13 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Go
         uses: actions/setup-go@v5
+        id: setup-go
         with:
           go-version-file: "go.mod"
           cache-dependency-path: go.sum
-      - name: Display Go version
-        run: go version
+      - name: Download go modules
+        if: ${{ steps.setup-go.outputs.cache-hit != 'true' }}
+        run: go mod download
       - name: Lint
         run: ./task lint
       - name: Test
