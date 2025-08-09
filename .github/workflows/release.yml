@@ -40,4 +40,4 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION_PACKAGE: "github.com/berquerant/install-via-git-go/version"
+          VERSION_PACKAGE: "berquerant/install-via-git-go/version"

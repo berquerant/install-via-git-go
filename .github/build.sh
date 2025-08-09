@@ -8,7 +8,7 @@ current_tag() {
     git describe --tags --abbrev=0 --exact-match 2> /dev/null
 }
 
-readonly version_package="github.com/berquerant/install-via-git-go/version"
+readonly version_package="berquerant/install-via-git-go/version"
 
 ldflags() {
     echo "-X ${version_package}.Version=$(current_tag) -X ${version_package}.Revision=$(short_sha)"
