@@ -31,8 +31,8 @@ jobs:
         run: ./task test
       - name: Set env
         run: |
-          echo "VERSION=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-          echo "REVISION=$(git describe --tags --abbrev=0 --exact-match)" >> $GITHUB_ENV
+          echo "REVISION=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "VERSION=$(git describe --tags --abbrev=0 --exact-match)" >> $GITHUB_ENV
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
