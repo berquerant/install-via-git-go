@@ -8,7 +8,7 @@ tasks:
       - build
   build:
     cmds:
-      - go build -trimpath -v -o dist/install-via-git
+      - ./.github/build.sh -o dist/install-via-git
   lint:
     deps:
       - vuln

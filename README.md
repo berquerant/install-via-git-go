@@ -14,6 +14,7 @@ Available Commands:
   run         Run installation
   skeleton    Generate config skeleton
   uninstall   Run uninstallation
+  version     Show version info
 
 Flags:
       --debug   Enable debug logs
