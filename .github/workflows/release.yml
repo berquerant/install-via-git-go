@@ -1,7 +1,6 @@
 name: Release
 
-permissions:
-  contents: write
+permissions: {}
 
 on:
   push:
@@ -10,6 +9,8 @@ on:
 
 jobs:
   release:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
