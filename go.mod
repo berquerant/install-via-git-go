@@ -1,6 +1,6 @@
 module berquerant/install-via-git-go
 
-go 1.24.4
+go 1.25.1
 
 require (
 	github.com/berquerant/execx v0.12.0
