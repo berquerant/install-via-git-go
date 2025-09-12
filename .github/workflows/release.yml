@@ -9,6 +9,7 @@ on:
 
 jobs:
   release:
+    timeout-minutes: 10
     permissions:
       contents: write
     runs-on: ubuntu-latest
