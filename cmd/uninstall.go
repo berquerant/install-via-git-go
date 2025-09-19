@@ -36,27 +36,11 @@ var uninstallCmd = &cobra.Command{
 }
 
 func uninstall(cmd *cobra.Command, _ []string) error {
-	// load config
-	cfg, err := parseConfigFromFlag(cmd)
+	common, err := prepareCommonResource(cmd)
 	if err != nil {
 		return err
 	}
-	// prepare builtin envs
-	env, err := newEnv(cfg, cmd)
-	if err != nil {
-		return err
-	}
-	// prepare git cli
-	gitCommandName, _ := cmd.Flags().GetString("git")
-	workDir, err := getPath(cmd, "workDir")
-	if err != nil {
-		return errorx.Errorf(err, "invalid workDir")
-	}
-	gitWorkDir := workDir.Join(cfg.LocalDir).DirPath()
-	gitCommand := git.NewCommand(git.NewCLI(gitWorkDir, env, gitCommandName))
-	logx.Info("git", logx.S("git", gitCommandName), logx.S("workDir", gitWorkDir.String()))
-
-	lockFile := workDir.Join(cfg.LockFile).FilePath()
+	lockFile := common.lockFile()
 
 	remove, _ := cmd.Flags().GetBool("remove")
 	purge, _ := cmd.Flags().GetBool("purge")
@@ -67,9 +51,9 @@ func uninstall(cmd *cobra.Command, _ []string) error {
 		Remove:    remove || purge,
 	}
 	fact := strategy.NewFact(
-		inspect.RepoExistence(cmd.Context(), gitCommand),
+		inspect.RepoExistence(cmd.Context(), common.gitCommand),
 		inspect.LockExistence(lockFile),
-		inspect.RepoStatus(cmd.Context(), gitCommand, lockFile),
+		inspect.RepoStatus(cmd.Context(), common.gitCommand, lockFile),
 		ius.Get(),
 	)
 	logx.Info(
@@ -85,19 +69,19 @@ func uninstall(cmd *cobra.Command, _ []string) error {
 		return nil
 	}
 
-	shell := getShell(cmd, cfg)
+	shell := getShell(cmd, common.cfg)
 	logx.Info("start uninstallation!", logx.SS("shell", shell))
 	argument := &runner.Argument{
-		Config:       cfg,
-		Env:          env,
+		Config:       common.cfg,
+		Env:          common.env,
 		Shell:        shell,
-		LocalRepoDir: gitWorkDir,
+		LocalRepoDir: common.gitCommand.CLI().Dir(),
 	}
 	return (&uninstallRunner{
 		Argument:   argument,
-		workDir:    workDir.DirPath(),
+		workDir:    common.workDir.DirPath(),
 		lockFile:   lockFile,
-		gitCommand: gitCommand,
+		gitCommand: common.gitCommand,
 		fact:       fact,
 		purge:      purge,
 	}).run(cmd.Context())

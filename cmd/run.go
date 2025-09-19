@@ -56,29 +56,14 @@ func newEnv(cfg *config.Config, cmd *cobra.Command) (execx.Env, error) {
 }
 
 func run(cmd *cobra.Command, _ []string) error {
-	// load config
-	cfg, err := parseConfigFromFlag(cmd)
+	common, err := prepareCommonResource(cmd)
 	if err != nil {
 		return err
 	}
-	// prepare builtin envs
-	env, err := newEnv(cfg, cmd)
-	if err != nil {
-		return err
-	}
-	// prepare git cli
-	gitCommandName, _ := cmd.Flags().GetString("git")
-	workDir, err := getPath(cmd, "workDir")
-	if err != nil {
-		return errorx.Errorf(err, "invalid workDir")
-	}
-	gitWorkDir := workDir.Join(cfg.LocalDir).DirPath()
-	gitCommand := git.NewCommand(git.NewCLI(gitWorkDir, env, gitCommandName))
-	logx.Info("git", logx.S("git", gitCommandName), logx.S("workDir", gitWorkDir.String()))
 	// determine strategy
 	noupdate, _ := cmd.Flags().GetBool("noupdate")
 	clean, _ := cmd.Flags().GetBool("clean")
-	lockFile := workDir.Join(cfg.LockFile).FilePath()
+	lockFile := common.lockFile()
 	dry, _ := cmd.Flags().GetBool("dry")
 	update, _ := cmd.Flags().GetBool("update")
 	retry, _ := cmd.Flags().GetBool("retry")
@@ -88,14 +73,14 @@ func run(cmd *cobra.Command, _ []string) error {
 		NoUpdate: noupdate,
 	}
 	fact := strategy.NewFact(
-		inspect.RepoExistence(cmd.Context(), gitCommand),
+		inspect.RepoExistence(cmd.Context(), common.gitCommand),
 		inspect.LockExistence(lockFile),
-		inspect.RepoStatus(cmd.Context(), gitCommand, lockFile),
+		inspect.RepoStatus(cmd.Context(), common.gitCommand, lockFile),
 		ius.Get(),
 	)
 	// check hashes
 	{
-		commit, err := gitCommand.GetCommitHash(cmd.Context())
+		commit, err := common.gitCommand.GetCommitHash(cmd.Context())
 		logx.Info("current hash", logx.S("hash", commit), logx.Err(err))
 	}
 	{
@@ -126,26 +111,26 @@ func run(cmd *cobra.Command, _ []string) error {
 		runner.NewLockFileBackup(lockFile, explicitCommit, clean),
 	}
 	if backupRepo, _ := cmd.Flags().GetBool("backupRepo"); backupRepo {
-		backuperList = append(backuperList, runner.NewRepoBackup(gitWorkDir, clean))
+		backuperList = append(backuperList, runner.NewRepoBackup(common.gitCommand.CLI().Dir(), clean))
 	}
 	backupList := runner.NewBackupList(backuperList...)
 	if err := backupList.Create(); err != nil {
 		return errorx.Errorf(err, "create backup")
 	}
 
-	shell := getShell(cmd, cfg)
+	shell := getShell(cmd, common.cfg)
 	logx.Info("start installation!", logx.SS("shell", shell))
 	argument := &runner.Argument{
-		Config:       cfg,
-		Env:          env,
+		Config:       common.cfg,
+		Env:          common.env,
 		Shell:        shell,
-		LocalRepoDir: gitWorkDir,
+		LocalRepoDir: common.gitCommand.CLI().Dir(),
 	}
 	installErr := (&installRunner{
 		Argument:   argument,
-		workDir:    workDir.DirPath(),
+		workDir:    common.workDir.DirPath(),
 		lockFile:   lockFile,
-		gitCommand: gitCommand,
+		gitCommand: common.gitCommand,
 		fact:       fact,
 		noupdate:   noupdate,
 	}).run(cmd.Context())

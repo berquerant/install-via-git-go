@@ -3,8 +3,10 @@ package cmd
 import (
 	"berquerant/install-via-git-go/config"
 	"berquerant/install-via-git-go/errorx"
+	"berquerant/install-via-git-go/execx"
 	"berquerant/install-via-git-go/exit"
 	"berquerant/install-via-git-go/filepathx"
+	"berquerant/install-via-git-go/git"
 	"berquerant/install-via-git-go/logx"
 	"context"
 	"os"
@@ -131,4 +133,40 @@ func getShell(cmd *cobra.Command, cfg *config.Config) []string {
 		return cfg.Shell
 	}
 	return []string{"bash"}
+}
+
+type commonResource struct {
+	cfg        *config.Config
+	env        execx.Env
+	gitCommand git.Command
+	workDir    filepathx.Path
+}
+
+func (r *commonResource) lockFile() filepathx.FilePath {
+	return r.workDir.Join(r.cfg.LockFile).FilePath()
+}
+
+func prepareCommonResource(cmd *cobra.Command) (*commonResource, error) {
+	cfg, err := parseConfigFromFlag(cmd)
+	if err != nil {
+		return nil, err
+	}
+	env, err := newEnv(cfg, cmd)
+	if err != nil {
+		return nil, err
+	}
+	gitCommandName, _ := cmd.Flags().GetString("git")
+	workDir, err := getPath(cmd, "workDir")
+	if err != nil {
+		return nil, errorx.Errorf(err, "invalid workDir")
+	}
+	gitWorkDir := workDir.Join(cfg.LocalDir).DirPath()
+	gitCommand := git.NewCommand(git.NewCLI(gitWorkDir, env, gitCommandName))
+	logx.Info("git", logx.S("git", gitCommandName), logx.S("workDir", gitWorkDir.String()))
+	return &commonResource{
+		cfg:        cfg,
+		env:        env,
+		gitCommand: gitCommand,
+		workDir:    workDir,
+	}, nil
 }
