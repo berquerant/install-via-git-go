@@ -4,6 +4,7 @@ import (
 	"berquerant/install-via-git-go/errorx"
 	"berquerant/install-via-git-go/filepathx"
 	"berquerant/install-via-git-go/logx"
+	"strings"
 )
 
 type Pair struct {
@@ -27,6 +28,7 @@ func NewFileKeeper(path filepathx.FilePath) *FileKeeper {
 		path: path,
 	}
 	current, err := path.Read()
+	current = strings.TrimSpace(current)
 	logx.Debug("keeper new",
 		logx.S("path", path.String()),
 		logx.S("current", current),
