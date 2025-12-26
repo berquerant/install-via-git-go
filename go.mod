@@ -3,7 +3,7 @@ module berquerant/install-via-git-go
 go 1.25.1
 
 require (
-	github.com/berquerant/execx v0.12.0
+	github.com/berquerant/execx v0.13.0
 	github.com/goccy/go-yaml v1.19.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
