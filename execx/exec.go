@@ -85,6 +85,8 @@ func run(ctx context.Context, cmd *ex.Cmd) (result Result, retErr error) {
 		ctx,
 		ex.WithStdoutConsumer(consumer),
 		ex.WithStderrConsumer(consumer),
+		ex.WithCaptureStdout(true),
+		ex.WithCaptureStderr(true),
 	)
 	if err != nil {
 		retErr = errorx.Errorf(err, "exec command")
