@@ -38,7 +38,6 @@ func TestExecute(t *testing.T) {
 				stdout: "i18n\n",
 			},
 		} {
-			tc := tc
 			t.Run(tc.title, func(t *testing.T) {
 				r, err := execx.NewCommand(tc.args...).Execute(context.TODO(), withDir, execx.WithEnv(tc.env))
 				if !assert.Nil(t, err) {
@@ -112,7 +111,6 @@ echo err >&2`,
 				stdout: "100/200\n",
 			},
 		} {
-			tc := tc
 			t.Run(tc.title, func(t *testing.T) {
 				r, err := execx.NewRawScript(tc.script, "bash").Execute(context.TODO(), withDir, execx.WithEnv(tc.env))
 				if !assert.Nil(t, err) {

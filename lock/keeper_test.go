@@ -44,7 +44,6 @@ func TestFileKeeper(t *testing.T) {
 			wantAfterRollback: "init",
 		},
 	} {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			path := p.Join(tc.name).FilePath()
 			assert.Nil(t, path.Ensure())

@@ -92,7 +92,6 @@ func TestBackup(t *testing.T) {
 				},
 			},
 		} {
-			tc := tc
 			t.Run(tc.title, func(t *testing.T) {
 				t.Run("copy", func(t *testing.T) {
 					b := prepareBackup(t)
