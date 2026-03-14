@@ -63,7 +63,7 @@ func (h *BlockHandler) Handle(_ context.Context, r slog.Record) error {
 	// ignore groups
 	switch r.Level {
 	case LevelRaw:
-		write(r.Message)
+		write("%s", r.Message)
 	default:
 		write("%s\t%s\t%s\n", r.Time.Format(time.DateTime), r.Level, r.Message)
 		var (
