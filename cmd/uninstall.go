@@ -18,9 +18,8 @@ import (
 func init() {
 	setConfigFlag(uninstallCmd)
 	setShellFlag(uninstallCmd)
-	uninstallCmd.Flags().String("git", "git", "Git command")
-	uninstallCmd.Flags().StringP("workDir", "w", ".", "Working directory")
-	fail(uninstallCmd.MarkFlagDirname("workDir"))
+	setGitFlag(uninstallCmd)
+	setWorkDirFlag(uninstallCmd)
 	uninstallCmd.Flags().Bool("dry", false, "Execute up to strategy determination, no side effects")
 	uninstallCmd.Flags().Bool("remove", false, "Remove repo")
 	uninstallCmd.Flags().Bool("purge", false, "Remove repo and clear lock")
@@ -31,7 +30,7 @@ func init() {
 var uninstallCmd = &cobra.Command{
 	Use:   "uninstall",
 	Short: "Run uninstallation",
-	Long:  `Uninstall tools according to the configurtion file`,
+	Long:  `Uninstall tools according to the configuration file`,
 	RunE:  uninstall,
 }
 
@@ -79,7 +78,6 @@ func uninstall(cmd *cobra.Command, _ []string) error {
 	}
 	return (&uninstallRunner{
 		Argument:   argument,
-		workDir:    common.workDir.DirPath(),
 		lockFile:   lockFile,
 		gitCommand: common.gitCommand,
 		fact:       fact,
@@ -89,7 +87,6 @@ func uninstall(cmd *cobra.Command, _ []string) error {
 
 type uninstallRunner struct {
 	*runner.Argument
-	workDir    filepathx.DirPath
 	lockFile   filepathx.FilePath
 	gitCommand git.Command
 	fact       strategy.Fact

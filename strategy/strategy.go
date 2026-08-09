@@ -96,6 +96,72 @@ type Fact struct {
 	USpec   UpdateSpec
 }
 
+// factKey is the composite key for the strategy lookup table.
+type factKey struct {
+	re RepoExistence
+	le LockExistence
+	rs RepoStatus
+	us UpdateSpec
+}
+
+// strategyTable maps all known (RepoExistence, LockExistence, RepoStatus, UpdateSpec)
+// combinations to the appropriate strategy Type.
+// Entries with USuninstall, USremove, or USnoupdate are handled by short-circuit
+// rules in SelectStrategy before this table is consulted.
+var strategyTable = map[factKey]Type{
+	// REnone + LEnone: no repo, no lock — always init from empty regardless of status or spec
+	{REnone, LEnone, RSunknown, USunspec}: TinitFromEmpty,
+	{REnone, LEnone, RSunknown, USforce}:  TinitFromEmpty,
+	{REnone, LEnone, RSunknown, USretry}:  TinitFromEmpty,
+	{REnone, LEnone, RSconflict, USunspec}: TinitFromEmpty,
+	{REnone, LEnone, RSconflict, USforce}:  TinitFromEmpty,
+	{REnone, LEnone, RSconflict, USretry}:  TinitFromEmpty,
+	{REnone, LEnone, RSmatch, USunspec}: TinitFromEmpty,
+	{REnone, LEnone, RSmatch, USforce}:  TinitFromEmpty,
+	{REnone, LEnone, RSmatch, USretry}:  TinitFromEmpty,
+
+	// REnone + LEexist: no repo but lock exists
+	{REnone, LEexist, RSunknown, USunspec}: TinitFromEmptyToLock,
+	{REnone, LEexist, RSunknown, USretry}:  TinitFromEmptyToLock,
+	{REnone, LEexist, RSunknown, USforce}:  TinitFromEmptyToLatest,
+	{REnone, LEexist, RSconflict, USunspec}: TinitFromEmptyToLock,
+	{REnone, LEexist, RSconflict, USretry}:  TinitFromEmptyToLock,
+	{REnone, LEexist, RSconflict, USforce}:  TinitFromEmptyToLatest,
+	{REnone, LEexist, RSmatch, USunspec}: TinitFromEmptyToLock,
+	{REnone, LEexist, RSmatch, USretry}:  TinitFromEmptyToLock,
+	{REnone, LEexist, RSmatch, USforce}:  TinitFromEmptyToLatest,
+
+	// REexist + LEnone: repo exists but no lock
+	{REexist, LEnone, RSunknown, USunspec}: TcreateLock,
+	{REexist, LEnone, RSunknown, USretry}:  TcreateLock,
+	{REexist, LEnone, RSunknown, USforce}:  TcreateLatestLock,
+	{REexist, LEnone, RSconflict, USunspec}: TcreateLock,
+	{REexist, LEnone, RSconflict, USretry}:  TcreateLock,
+	{REexist, LEnone, RSconflict, USforce}:  TcreateLatestLock,
+	{REexist, LEnone, RSmatch, USunspec}: TcreateLock,
+	{REexist, LEnone, RSmatch, USretry}:  TcreateLock,
+	{REexist, LEnone, RSmatch, USforce}:  TcreateLatestLock,
+
+	// REexist + LEexist + RSconflict: repo and lock exist but differ
+	{REexist, LEexist, RSconflict, USunspec}: TupdateToLock,
+	{REexist, LEexist, RSconflict, USretry}:  TupdateToLock,
+	{REexist, LEexist, RSconflict, USforce}:  TupdateToLatestWithLock,
+
+	// REexist + LEexist + RSmatch: repo and lock exist and match
+	{REexist, LEexist, RSmatch, USunspec}: Tnoop,
+	{REexist, LEexist, RSmatch, USretry}:  Tretry,
+	{REexist, LEexist, RSmatch, USforce}:  TupdateToLatestWithLock,
+
+	// REexist + LEexist + RSunknown: repo and lock exist but status unknown
+	{REexist, LEexist, RSunknown, USforce}: TupdateToLatestWithLock,
+}
+
+// SelectStrategy determines the update strategy based on the current fact.
+//
+// Short-circuit rules (evaluated before the lookup table):
+//   - USnoupdate → Tnoupdate
+//   - USremove   → Tremove
+//   - USuninstall → Tnoop
 func (f Fact) SelectStrategy() Type {
 	switch f.USpec {
 	case USnoupdate:
@@ -106,55 +172,9 @@ func (f Fact) SelectStrategy() Type {
 		return Tnoop
 	}
 
-	switch f.RExist {
-	case REnone:
-		switch f.LExist {
-		case LEnone:
-			return TinitFromEmpty
-		case LEexist:
-			switch f.USpec {
-			case USunspec, USretry:
-				return TinitFromEmptyToLock
-			case USforce:
-				return TinitFromEmptyToLatest
-			}
-		}
-	case REexist:
-		switch f.LExist {
-		case LEnone:
-			switch f.USpec {
-			case USunspec, USretry:
-				return TcreateLock
-			case USforce:
-				return TcreateLatestLock
-			}
-		case LEexist:
-			switch f.RStatus {
-			case RSconflict:
-				switch f.USpec {
-				case USunspec, USretry:
-					return TupdateToLock
-				case USforce:
-					return TupdateToLatestWithLock
-				}
-			case RSmatch:
-				switch f.USpec {
-				case USunspec:
-					return Tnoop
-				case USretry:
-					return Tretry
-				case USforce:
-					return TupdateToLatestWithLock
-				}
-			default:
-				switch f.USpec {
-				case USforce:
-					return TupdateToLatestWithLock
-				}
-			}
-		}
+	if t, ok := strategyTable[factKey{f.RExist, f.LExist, f.RStatus, f.USpec}]; ok {
+		return t
 	}
-
 	return Tunknown
 }
 

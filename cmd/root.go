@@ -124,6 +124,15 @@ func setShellFlag(cmd *cobra.Command) {
 		"shell", []string{}, "Shell used to run scripts, separated by comma, e.g. arch,--arm64e,/bin/bash")
 }
 
+func setGitFlag(cmd *cobra.Command) {
+	cmd.Flags().String("git", "git", "Git command")
+}
+
+func setWorkDirFlag(cmd *cobra.Command) {
+	cmd.Flags().StringP("workDir", "w", ".", "Working directory")
+	fail(cmd.MarkFlagDirname("workDir"))
+}
+
 func getShell(cmd *cobra.Command, cfg *config.Config) []string {
 	shell, _ := cmd.Flags().GetStringSlice("shell")
 	if len(shell) > 0 {
@@ -133,6 +142,20 @@ func getShell(cmd *cobra.Command, cfg *config.Config) []string {
 		return cfg.Shell
 	}
 	return []string{"bash"}
+}
+
+func newEnv(cfg *config.Config, cmd *cobra.Command) (execx.Env, error) {
+	env := execx.EnvFromMap(cfg.Env)
+	env.Set("IVG_URI", cfg.URI)
+	env.Set("IVG_BRANCH", cfg.Branch)
+	env.Set("IVG_LOCALD", cfg.LocalDir)
+	env.Set("IVG_LOCK", cfg.LockFile)
+	workDir, err := getPath(cmd, "workDir")
+	if err != nil {
+		return nil, errorx.Errorf(err, "invalid workDir")
+	}
+	env.Set("IVG_WORKD", workDir.String())
+	return env, nil
 }
 
 type commonResource struct {

@@ -10,6 +10,8 @@ import (
 type Backuper interface {
 	Create() error
 	Restore() error
+	// Close removes the backup. Should be called after Create even on success.
+	Close() error
 }
 
 type BackupList []Backuper
@@ -30,10 +32,17 @@ func (b BackupList) Restore() error {
 	})
 }
 
-type NoopBackup struct{}
+func (b BackupList) Close() error {
+	return errorx.Serial(b, func(x Backuper) error {
+		return x.Close()
+	})
+}
 
-func (*NoopBackup) Create() error  { return nil }
-func (*NoopBackup) Restore() error { return nil }
+type noopBackup struct{}
+
+func (*noopBackup) Create() error  { return nil }
+func (*noopBackup) Restore() error { return nil }
+func (*noopBackup) Close() error   { return nil }
 
 type LockFileBackup struct {
 	backupFile *backup.Backup
@@ -43,7 +52,7 @@ type LockFileBackup struct {
 
 func NewLockFileBackup(origin filepathx.FilePath, commit string, clean bool) Backuper {
 	if !(clean || commit != "") {
-		return &NoopBackup{}
+		return &noopBackup{}
 	}
 	return &LockFileBackup{
 		origin: origin,
@@ -73,8 +82,18 @@ func (b *LockFileBackup) Create() error {
 }
 
 func (b *LockFileBackup) Restore() error {
+	if b.backupFile == nil {
+		return nil
+	}
 	defer b.backupFile.Close()
 	return b.backupFile.Restore()
+}
+
+func (b *LockFileBackup) Close() error {
+	if b.backupFile == nil {
+		return nil
+	}
+	return b.backupFile.Close()
 }
 
 type RepoBackup struct {
@@ -84,7 +103,7 @@ type RepoBackup struct {
 
 func NewRepoBackup(gitWorkDir filepathx.DirPath, clean bool) Backuper {
 	if !(clean || gitWorkDir.Exist()) {
-		return &NoopBackup{}
+		return &noopBackup{}
 	}
 	return &RepoBackup{
 		gitWorkDir: gitWorkDir,
@@ -105,6 +124,16 @@ func (b *RepoBackup) Create() error {
 }
 
 func (b *RepoBackup) Restore() error {
+	if b.backupDir == nil {
+		return nil
+	}
 	defer b.backupDir.Close()
 	return b.backupDir.Restore()
+}
+
+func (b *RepoBackup) Close() error {
+	if b.backupDir == nil {
+		return nil
+	}
+	return b.backupDir.Close()
 }

@@ -64,7 +64,7 @@ const skeleton = `# install-via-git configuration.
 # repository uri
 uri: https://github.com/some/toolname.git
 # target branch name (optional, default is main)
-branch: master
+branch: main
 # git clone destination (optional, default is repo).
 # clone to workDir/locald.
 locald: localrepo

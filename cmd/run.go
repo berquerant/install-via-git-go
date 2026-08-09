@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"berquerant/install-via-git-go/config"
 	"berquerant/install-via-git-go/errorx"
 	"berquerant/install-via-git-go/execx"
 	"berquerant/install-via-git-go/filepathx"
@@ -20,9 +19,8 @@ import (
 func init() {
 	setConfigFlag(runCmd)
 	setShellFlag(runCmd)
-	runCmd.Flags().String("git", "git", "Git command")
-	runCmd.Flags().StringP("workDir", "w", ".", "Working directory")
-	fail(runCmd.MarkFlagDirname("workDir"))
+	setGitFlag(runCmd)
+	setWorkDirFlag(runCmd)
 	runCmd.Flags().BoolP("update", "u", false, "Force update")
 	runCmd.Flags().BoolP("retry", "r", false, "Continue even if no update")
 	runCmd.Flags().Bool("dry", false, "Execute up to strategy determination, no side effects")
@@ -41,19 +39,7 @@ var runCmd = &cobra.Command{
 	RunE:  run,
 }
 
-func newEnv(cfg *config.Config, cmd *cobra.Command) (execx.Env, error) {
-	env := execx.EnvFromMap(cfg.Env)
-	env.Set("IVG_URI", cfg.URI)
-	env.Set("IVG_BRANCH", cfg.Branch)
-	env.Set("IVG_LOCALD", cfg.LocalDir)
-	env.Set("IVG_LOCK", cfg.LockFile)
-	workDir, err := getPath(cmd, "workDir")
-	if err != nil {
-		return nil, errorx.Errorf(err, "invalid workDir")
-	}
-	env.Set("IVG_WORKD", workDir.String())
-	return env, nil
-}
+
 
 func run(cmd *cobra.Command, _ []string) error {
 	common, err := prepareCommonResource(cmd)
@@ -117,6 +103,11 @@ func run(cmd *cobra.Command, _ []string) error {
 	if err := backupList.Create(); err != nil {
 		return errorx.Errorf(err, "create backup")
 	}
+	defer func() {
+		if err := backupList.Close(); err != nil {
+			logx.Error("close backup", logx.Err(err))
+		}
+	}()
 
 	shell := getShell(cmd, common.cfg)
 	logx.Info("start installation!", logx.SS("shell", shell))

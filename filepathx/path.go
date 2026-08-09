@@ -12,7 +12,6 @@ type Path string
 
 var (
 	ErrNotAbs  = errors.New("NotAbs")
-	ErrNotDir  = errors.New("NotDir")
 	ErrNotFile = errors.New("NotFile")
 )
 
@@ -51,8 +50,7 @@ func (p Path) Parent() Path {
 }
 
 func (p Path) Tail() string {
-	xs := strings.Split(p.String(), "/")
-	return xs[len(xs)-1]
+	return filepath.Base(p.String())
 }
 
 func (p Path) String() string {
