@@ -31,7 +31,7 @@ func init() {
 var uninstallCmd = &cobra.Command{
 	Use:   "uninstall",
 	Short: "Run uninstallation",
-	Long:  `Uninstall tools according to the configurtion file`,
+	Long:  `Uninstall tools according to the configuration file`,
 	RunE:  uninstall,
 }
 
@@ -79,7 +79,6 @@ func uninstall(cmd *cobra.Command, _ []string) error {
 	}
 	return (&uninstallRunner{
 		Argument:   argument,
-		workDir:    common.workDir.DirPath(),
 		lockFile:   lockFile,
 		gitCommand: common.gitCommand,
 		fact:       fact,
@@ -89,7 +88,6 @@ func uninstall(cmd *cobra.Command, _ []string) error {
 
 type uninstallRunner struct {
 	*runner.Argument
-	workDir    filepathx.DirPath
 	lockFile   filepathx.FilePath
 	gitCommand git.Command
 	fact       strategy.Fact

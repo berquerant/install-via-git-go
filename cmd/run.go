@@ -117,6 +117,11 @@ func run(cmd *cobra.Command, _ []string) error {
 	if err := backupList.Create(); err != nil {
 		return errorx.Errorf(err, "create backup")
 	}
+	defer func() {
+		if err := backupList.Close(); err != nil {
+			logx.Error("close backup", logx.Err(err))
+		}
+	}()
 
 	shell := getShell(cmd, common.cfg)
 	logx.Info("start installation!", logx.SS("shell", shell))

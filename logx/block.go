@@ -1,6 +1,7 @@
 package logx
 
 import (
+	"context"
 	"os"
 
 	"golang.org/x/exp/slog"
@@ -30,7 +31,7 @@ func (l *BlockLogger) logAttrs(level slog.Level, msg string, attrs ...Attr) {
 	for i, attr := range attrs {
 		rawAttrs[i] = slog.Attr(attr)
 	}
-	l.LogAttrs(nil, level, msg, rawAttrs...)
+	l.LogAttrs(context.Background(), level, msg, rawAttrs...)
 }
 
 func (l *BlockLogger) Info(msg string, attrs ...Attr) {
