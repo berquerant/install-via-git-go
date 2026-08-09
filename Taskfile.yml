@@ -12,12 +12,16 @@ tasks:
   lint:
     deps:
       - vet
+      - go-fix
   test:
     cmds:
       - go tool gotestsum --format pkgname --format-icons hivis -- -cover -race ./...
   vet:
     cmds:
       - go vet ./...
+  go-fix:
+    cmds:
+      - go fix -diff ./...
   generate:
     # deps:
     #   - clean-generated
