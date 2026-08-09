@@ -33,6 +33,8 @@ type UpdateSpec struct {
 	Uninstall bool
 }
 
+// Get returns the effective UpdateSpec.
+// Priority (highest first): NoUpdate > Retry > Update > Remove > Uninstall > default(USunspec)
 func (us UpdateSpec) Get() strategy.UpdateSpec {
 	switch {
 	case us.NoUpdate:

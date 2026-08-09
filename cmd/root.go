@@ -144,6 +144,20 @@ func getShell(cmd *cobra.Command, cfg *config.Config) []string {
 	return []string{"bash"}
 }
 
+func newEnv(cfg *config.Config, cmd *cobra.Command) (execx.Env, error) {
+	env := execx.EnvFromMap(cfg.Env)
+	env.Set("IVG_URI", cfg.URI)
+	env.Set("IVG_BRANCH", cfg.Branch)
+	env.Set("IVG_LOCALD", cfg.LocalDir)
+	env.Set("IVG_LOCK", cfg.LockFile)
+	workDir, err := getPath(cmd, "workDir")
+	if err != nil {
+		return nil, errorx.Errorf(err, "invalid workDir")
+	}
+	env.Set("IVG_WORKD", workDir.String())
+	return env, nil
+}
+
 type commonResource struct {
 	cfg        *config.Config
 	env        execx.Env

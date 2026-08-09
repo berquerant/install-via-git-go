@@ -11,6 +11,10 @@ var (
 	setupLoggerOnce sync.Once
 )
 
+func init() {
+	setup(false)
+}
+
 func Setup(debug bool) {
 	setupLoggerOnce.Do(func() {
 		setup(debug)
@@ -23,7 +27,6 @@ func setup(debug bool) {
 }
 
 func get() Logger {
-	Setup(enableDebug)
 	return logger
 }
 

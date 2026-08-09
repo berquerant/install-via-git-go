@@ -4,7 +4,6 @@ import (
 	"berquerant/install-via-git-go/execx"
 	"berquerant/install-via-git-go/filepathx"
 	"context"
-	"errors"
 	"strings"
 )
 
@@ -29,9 +28,7 @@ type CLIImpl struct {
 	env     execx.Env
 }
 
-var (
-	ErrCLI = errors.New("GitCLI")
-)
+
 
 func (c CLIImpl) Env() execx.Env {
 	return c.env

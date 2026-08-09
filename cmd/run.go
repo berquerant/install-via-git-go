@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"berquerant/install-via-git-go/config"
 	"berquerant/install-via-git-go/errorx"
 	"berquerant/install-via-git-go/execx"
 	"berquerant/install-via-git-go/filepathx"
@@ -40,19 +39,7 @@ var runCmd = &cobra.Command{
 	RunE:  run,
 }
 
-func newEnv(cfg *config.Config, cmd *cobra.Command) (execx.Env, error) {
-	env := execx.EnvFromMap(cfg.Env)
-	env.Set("IVG_URI", cfg.URI)
-	env.Set("IVG_BRANCH", cfg.Branch)
-	env.Set("IVG_LOCALD", cfg.LocalDir)
-	env.Set("IVG_LOCK", cfg.LockFile)
-	workDir, err := getPath(cmd, "workDir")
-	if err != nil {
-		return nil, errorx.Errorf(err, "invalid workDir")
-	}
-	env.Set("IVG_WORKD", workDir.String())
-	return env, nil
-}
+
 
 func run(cmd *cobra.Command, _ []string) error {
 	common, err := prepareCommonResource(cmd)

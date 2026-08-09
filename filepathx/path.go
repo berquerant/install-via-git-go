@@ -12,7 +12,6 @@ type Path string
 
 var (
 	ErrNotAbs  = errors.New("NotAbs")
-	ErrNotDir  = errors.New("NotDir")
 	ErrNotFile = errors.New("NotFile")
 )
 
