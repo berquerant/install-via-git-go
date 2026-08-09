@@ -17,6 +17,30 @@ var (
 	ErrNoLock          = errors.New("NoLock")
 )
 
+// gitOperator is the subset of git.Command required by pullAndCheckout.
+type gitOperator interface {
+	Checkout(ctx context.Context, commit string) error
+	Fetch(ctx context.Context) error
+	PullForce(ctx context.Context, branch string) error
+	GetCommitHash(ctx context.Context) (string, error)
+}
+
+// pullAndCheckout fetches latest from origin, checks out branch, and returns the current commit hash.
+// The initial checkout is best-effort (errors ignored) to handle cases where HEAD is detached.
+func pullAndCheckout(ctx context.Context, cmd gitOperator, branch string) (string, error) {
+	_ = cmd.Checkout(ctx, branch)
+	if err := cmd.Fetch(ctx); err != nil {
+		return "", err
+	}
+	if err := cmd.PullForce(ctx, branch); err != nil {
+		return "", err
+	}
+	if err := cmd.Checkout(ctx, branch); err != nil {
+		return "", err
+	}
+	return cmd.GetCommitHash(ctx)
+}
+
 func NewUpdateToLatestWithLock(c RunnerConfig) *UpdateToLatestWithLock {
 	return &UpdateToLatestWithLock{
 		c: c,
@@ -32,18 +56,7 @@ func (r *UpdateToLatestWithLock) Run(ctx context.Context) error {
 	if current == "" {
 		return ErrNoLock
 	}
-	_ = r.c.Command().Checkout(ctx, r.c.Branch())
-	if err := r.c.Command().Fetch(ctx); err != nil {
-		return err
-	}
-	if err := r.c.Command().PullForce(ctx, r.c.Branch()); err != nil {
-		return err
-	}
-	if err := r.c.Command().Checkout(ctx, r.c.Branch()); err != nil {
-		return err
-	}
-
-	next, err := r.c.Command().GetCommitHash(ctx)
+	next, err := pullAndCheckout(ctx, r.c.Command(), r.c.Branch())
 	if err != nil {
 		return err
 	}
@@ -102,18 +115,7 @@ func (r *CreateLatestLockRunner) Run(ctx context.Context) error {
 	}
 	r.c.Pair().Current = current
 
-	_ = r.c.Command().Checkout(ctx, r.c.Branch())
-	if err := r.c.Command().Fetch(ctx); err != nil {
-		return err
-	}
-	if err := r.c.Command().PullForce(ctx, r.c.Branch()); err != nil {
-		return err
-	}
-	if err := r.c.Command().Checkout(ctx, r.c.Branch()); err != nil {
-		return err
-	}
-
-	next, err := r.c.Command().GetCommitHash(ctx)
+	next, err := pullAndCheckout(ctx, r.c.Command(), r.c.Branch())
 	if err != nil {
 		return err
 	}
@@ -132,21 +134,11 @@ type CreateLockRunner struct {
 }
 
 func (r *CreateLockRunner) Run(ctx context.Context) error {
-	_ = r.c.Command().Checkout(ctx, r.c.Branch())
-	if err := r.c.Command().Fetch(ctx); err != nil {
-		return err
-	}
-	if err := r.c.Command().PullForce(ctx, r.c.Branch()); err != nil {
-		return err
-	}
-	if err := r.c.Command().Checkout(ctx, r.c.Branch()); err != nil {
-		return err
-	}
-	current, err := r.c.Command().GetCommitHash(ctx)
+	next, err := pullAndCheckout(ctx, r.c.Command(), r.c.Branch())
 	if err != nil {
 		return err
 	}
-	r.c.Pair().Next = current
+	r.c.Pair().Next = next
 	return nil
 }
 
@@ -232,25 +224,16 @@ func (r *InitFromEmptyRunner) Run(ctx context.Context) error {
 	return nil
 }
 
-type RetryRunner struct{}
+type noopRunner struct{}
 
-func NewRetryRunner() *RetryRunner {
-	return &RetryRunner{}
+func (*noopRunner) Run(_ context.Context) error { return nil }
+
+func NewRetryRunner() *noopRunner {
+	return &noopRunner{}
 }
 
-func (*RetryRunner) Run(_ context.Context) error {
-	return nil
-}
-
-func NewNoUpdateRunner() *NoUpdateRunner {
-	return &NoUpdateRunner{}
-}
-
-type NoUpdateRunner struct {
-}
-
-func (*NoUpdateRunner) Run(_ context.Context) error {
-	return nil
+func NewNoUpdateRunner() *noopRunner {
+	return &noopRunner{}
 }
 
 func NewNoopRunner() *NoopRunner {

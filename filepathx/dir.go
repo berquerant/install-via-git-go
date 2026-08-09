@@ -40,7 +40,7 @@ func (d DirPath) WalkWith(dst DirPath, callback WalkCallback) error {
 		return err
 	}
 
-	if err := os.MkdirAll(dst.String(), 0755); err != nil {
+	if err := os.MkdirAll(dst.String(), 0750); err != nil {
 		return err
 	}
 

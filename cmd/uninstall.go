@@ -18,9 +18,8 @@ import (
 func init() {
 	setConfigFlag(uninstallCmd)
 	setShellFlag(uninstallCmd)
-	uninstallCmd.Flags().String("git", "git", "Git command")
-	uninstallCmd.Flags().StringP("workDir", "w", ".", "Working directory")
-	fail(uninstallCmd.MarkFlagDirname("workDir"))
+	setGitFlag(uninstallCmd)
+	setWorkDirFlag(uninstallCmd)
 	uninstallCmd.Flags().Bool("dry", false, "Execute up to strategy determination, no side effects")
 	uninstallCmd.Flags().Bool("remove", false, "Remove repo")
 	uninstallCmd.Flags().Bool("purge", false, "Remove repo and clear lock")

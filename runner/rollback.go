@@ -28,16 +28,11 @@ func NewRollback(
 func (r *Rollback) Run(ctx context.Context) error {
 	if r.noupdate {
 		logx.Info("skip rollback repo and lockfile")
-		if _, err := execx.NewExecutorFromStrings(r.Config.Steps.Rollback, r.Shell...).
-			Execute(ctx, execx.WithDir(r.LocalRepoDir), execx.WithEnv(r.Env)); err != nil {
-			logx.Error("run rollback", logx.Err(err))
+	} else {
+		logx.Error("rollback")
+		if err := r.keeper.Rollback(ctx); err != nil {
+			logx.Error("rollback error", logx.Err(err))
 		}
-		return nil
-	}
-
-	logx.Error("rollback")
-	if err := r.keeper.Rollback(ctx); err != nil {
-		logx.Error("rollback error", logx.Err(err))
 	}
 	if _, err := execx.NewExecutorFromStrings(r.Config.Steps.Rollback, r.Shell...).
 		Execute(ctx, execx.WithDir(r.LocalRepoDir), execx.WithEnv(r.Env)); err != nil {

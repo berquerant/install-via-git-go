@@ -62,7 +62,7 @@ type Command interface {
 	Fetch(ctx context.Context) error
 	Checkout(ctx context.Context, commit string) error
 	ResetHard(ctx context.Context, commit string) error
-	PullForce(ctx context.Context, repo string) error
+	PullForce(ctx context.Context, branch string) error
 	CLI() CLI
 }
 
@@ -109,7 +109,7 @@ func (c CommandImpl) ResetHard(ctx context.Context, commit string) error {
 	return err
 }
 
-func (c CommandImpl) PullForce(ctx context.Context, repo string) error {
-	_, err := c.cli.Execute(ctx, "pull", "--prune", "--force", "origin", repo)
+func (c CommandImpl) PullForce(ctx context.Context, branch string) error {
+	_, err := c.cli.Execute(ctx, "pull", "--prune", "--force", "origin", branch)
 	return err
 }

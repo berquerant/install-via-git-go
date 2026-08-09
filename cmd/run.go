@@ -20,9 +20,8 @@ import (
 func init() {
 	setConfigFlag(runCmd)
 	setShellFlag(runCmd)
-	runCmd.Flags().String("git", "git", "Git command")
-	runCmd.Flags().StringP("workDir", "w", ".", "Working directory")
-	fail(runCmd.MarkFlagDirname("workDir"))
+	setGitFlag(runCmd)
+	setWorkDirFlag(runCmd)
 	runCmd.Flags().BoolP("update", "u", false, "Force update")
 	runCmd.Flags().BoolP("retry", "r", false, "Continue even if no update")
 	runCmd.Flags().Bool("dry", false, "Execute up to strategy determination, no side effects")

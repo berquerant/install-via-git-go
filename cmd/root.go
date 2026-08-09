@@ -124,6 +124,15 @@ func setShellFlag(cmd *cobra.Command) {
 		"shell", []string{}, "Shell used to run scripts, separated by comma, e.g. arch,--arm64e,/bin/bash")
 }
 
+func setGitFlag(cmd *cobra.Command) {
+	cmd.Flags().String("git", "git", "Git command")
+}
+
+func setWorkDirFlag(cmd *cobra.Command) {
+	cmd.Flags().StringP("workDir", "w", ".", "Working directory")
+	fail(cmd.MarkFlagDirname("workDir"))
+}
+
 func getShell(cmd *cobra.Command, cfg *config.Config) []string {
 	shell, _ := cmd.Flags().GetStringSlice("shell")
 	if len(shell) > 0 {
