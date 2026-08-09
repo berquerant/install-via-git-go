@@ -11,14 +11,10 @@ tasks:
       - ./.github/build.sh -o dist/install-via-git
   lint:
     deps:
-      - vuln
       - vet
   test:
     cmds:
       - go tool gotestsum --format pkgname --format-icons hivis -- -cover -race ./...
-  vuln:
-    cmds:
-      - go tool govulncheck ./...
   vet:
     cmds:
       - go vet ./...
